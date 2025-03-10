@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - '**'
+    tags-ignore:
+    - '**'
+  pull_request:
+    branches:
+    - '**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: python ${{ matrix.environment }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        environment: [test39, test313]
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: prefix-dev/setup-pixi@v0.8.3
+      with:
+        pixi-version: v0.42.1
+        environments: ${{ matrix.environment }}
+        activate-environment: ${{ matrix.environment }}
+    - name: Run pixi
+      run: pixi r test
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: ${{ github.event.repository.owner.login }}/${{ github.event.repository.name }}
