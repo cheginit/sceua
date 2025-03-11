@@ -23,7 +23,7 @@ def test_x0():
 
 
 def test_model(hymod):
-    result = sceua.minimize(hymod.fit, hymod.bounds, seed=42, n_complexes=3 * 2)
+    result = sceua.minimize(hymod.fit, hymod.bounds, seed=42, n_complexes=3 * len(hymod.bounds))
     assert result.success
 
 

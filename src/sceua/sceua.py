@@ -258,7 +258,7 @@ def _update_population(
     return pop_x, pop_f, best_x, best_f, no_change_count
 
 
-def minimize(
+def minimize(  # noqa: PLR0915
     func: FuncType,
     bounds: Sequence[tuple[float, float]],
     *,

@@ -39,6 +39,10 @@ dependencies = [
 ]
 optional-dependencies.benchmark = [
   "pytest-codspeed",
+  "landscapes",
+  "numba",
+  "numpy",
+  "pandas",
 ]
 optional-dependencies.dev = [
   "folium",
@@ -220,11 +224,6 @@ ignore-words-list = "gage,gages"
 addopts = [
   "--import-mode=importlib",
   "-v",
-  "--cov",
-  "--cov-append",
-  "--cov-branch",
-  "--cov-report=xml",
-  "--junitxml=junit.xml",
   "--durations=5",
 ]
 doctest_optionflags = 'NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER'
@@ -304,7 +303,7 @@ lint = { features = [ "lint", "py313" ], no-default-feature = true }
 docs = { features = [ "docs", "dev", "py313" ] }
 
 [tool.pixi.feature.test.tasks]
-test = "pytest"
+test = "pytest --cov --cov-append --cov-branch --cov-report=xml --junitxml=junit.xml"
 report = { cmd = [ "coverage", "report" ], depends-on = [ "test" ] }
 html = { cmd = [ "coverage", "html" ], depends-on = [ "report" ] }
 

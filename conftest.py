@@ -1,3 +1,5 @@
+"""Pytest configuration for the HYMOD model tests."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -99,16 +101,16 @@ class HYMOD:
         self.cal_idx = np.s_[warmup_years * 365 :]
         self.bounds = [(1, 1500), (0.0, 1.99), (0.01, 0.99), (0.01, 0.14), (0.14, 0.99)]
 
-    def __call__(self, x: FloatArray) -> FloatArray:
-        """Simulate the watershed."""
-        c_max, b_exp, alpha, k_s, k_q = x.astype("f4")
-        return _simulate(self.prcp, self.pet, c_max, b_exp, alpha, k_s, k_q)
-
     def fit(self, x: FloatArray) -> float:
         """Compute objective functions (NSE)."""
         qsim = self(x)
         nse = compute_nse(qsim[self.cal_idx], self.qobs[self.cal_idx])
         return -nse
+
+    def __call__(self, x: FloatArray) -> FloatArray:
+        """Simulate the watershed."""
+        c_max, b_exp, alpha, k_s, k_q = x.astype("f4")
+        return _simulate(self.prcp, self.pet, c_max, b_exp, alpha, k_s, k_q)
 
 
 @pytest.fixture

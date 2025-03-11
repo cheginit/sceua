@@ -119,3 +119,4 @@ data
 WBT
 .nox
 .markdownlint.json
+.codspeed

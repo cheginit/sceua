@@ -70,7 +70,8 @@ for easy adoption.
 The most important tuning parameters are `n_complexes` and `n_points_complex` for all
 cases, and `pca_freq` and `pca_tol` for cases with highly correlated parameters and/or
 high-dimensional problems. The default values are set to reasonable defaults, but you
-can adjust them based on your specific problem, if needed.
+can adjust them based on your specific problem, if needed. Please refer to the
+[API reference](https://sceua.readthedocs.io/en/latest/reference/) for more details.
 
 ### Example Usage
 
