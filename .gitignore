@@ -112,7 +112,6 @@ cache
 .copilot-instructions.md
 junit.xml
 .coverage
-pixi.lock
 *.egg-info
 .copilot-instructions.md
 data

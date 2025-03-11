@@ -302,7 +302,7 @@ test313 = { features = [ "test", "py313" ] }
 benchmark = { features = [ "benchmark", "py313" ] }
 typecheck = { features = [ "typecheck", "py313" ] }
 lint = { features = [ "lint", "py313" ], no-default-feature = true }
-docs = { features = [ "docs", "dev", "py313" ] }
+docs = { features = [ "docs", "dev" ] }
 
 [tool.pixi.feature.test.tasks]
 test = "pytest --cov --cov-append --cov-branch --cov-report=xml --junitxml=junit.xml"
