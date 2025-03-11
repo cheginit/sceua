@@ -38,11 +38,11 @@ dependencies = [
   "scipy>=1.15",
 ]
 optional-dependencies.benchmark = [
-  "pytest-codspeed",
   "landscapes",
   "numba",
   "numpy",
   "pandas",
+  "pytest-codspeed",
 ]
 optional-dependencies.dev = [
   "folium",
