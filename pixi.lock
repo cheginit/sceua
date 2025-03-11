@@ -9954,8 +9954,8 @@ packages:
   requires_python: '>=3.9'
 - pypi: .
   name: sceua
-  version: 0.1.1.dev0+g592c126.d20250311
-  sha256: 9c2b3613f7d6a9eae0a3208cd13e3e36e3b5e1654eac73576449fd7849d1e72e
+  version: 0.1.1.dev2+g291528d.d20250311
+  sha256: e95c309573688924447af2d5638aa8a700de6512c7c5c466d2f4596c5d65e1f2
   requires_dist:
   - numpy>=2
   - scipy>=1.15
