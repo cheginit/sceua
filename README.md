@@ -1,4 +1,4 @@
-# SCE-UA: Parameter Calibration with Shuffle Complex Evolution Algorithm
+# SCE-UA: Shuffle Complex Evolution Algorithm for Optimization
 
 [![PyPi](https://img.shields.io/pypi/v/sceua.svg)](https://pypi.python.org/pypi/sceua)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/sceua.svg)](https://anaconda.org/conda-forge/sceua)
@@ -11,35 +11,40 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cheginit/sceua/HEAD?labpath=docs%2Fexamples)
 
-SCE-UA is a lightweight Python package that implements the Shuffled Complex Evolution
-(SCE-UA) algorithm for parameter calibration of hydrological models. Built on NumPy and
-SciPy, it's designed for seamless integration into existing Python workflows while
-providing robust global optimization capabilities.
+SCE-UA is a lightweight Python package implementing the Shuffled Complex Evolution
+(SCE-UA) algorithm for global optimization. Designed primarily for hydrological model
+calibration, it leverages NumPy and SciPy for efficient computation and seamless
+integration into Python workflows.
 
 Full documentation is available at [sceua.readthedocs.io](https://sceua.readthedocs.io).
 
 ## 🌟 Features
 
-The major improvements over the original SCE-UA algorithm include:
+This implementation of the **SCE-UA** algorithm incorporates several major improvements
+from the literature over the original 1994 version. These enhancements include:
 
-- **Adaptive smoothing parameter (theta)** based on problem scale, which helps with
-    numerical stability and convergence
-- **Latin Hypercube Sampling** for initial population generation instead of uniform
-    random sampling, providing better coverage of the parameter space
-- **PCA-based recovery mechanism** to identify and recover lost dimensions in the
-    population (from [Chu et al. 2010](https://doi.org/10.1029/2010wr009224))
-- **Best solution inclusion** in every complex to accelerate convergence
-- **Optimized complex evolution strategy** with improved reflection, contraction, and
-    mutation operations
+- **Adaptive smoothing parameter (θ)** that adjusts based on problem scale, improving
+    numerical stability and convergence.
+- **Latin Hypercube Sampling (LHS)** for initial population generation, ensuring better
+    parameter space coverage compared to uniform random sampling.
+- **PCA-based recovery mechanism** to detect and restore lost dimensions in the
+    population.
+- **Best solution inclusion** in every complex to accelerate convergence.
+- **Optimized complex evolution strategy** with enhanced reflection, contraction, and
+    mutation operations.
 - **Automatic parameter determination** with sensible defaults based on problem
-    dimensionality
-- **Multithreading support** for parallel evaluation of the objective function
-- **Comprehensive convergence criteria** including function value tolerance, parameter
-    tolerance, and maximum iterations
-- **Detailed results object** that provides comprehensive information about the
-    optimization process
-- **Type hinting and modern Python implementation** following best practices for better
-    code maintainability
+    dimensionality.
+- **Comprehensive convergence criteria**, including function value tolerance, parameter
+    tolerance, and maximum iterations.
+
+Additionally, the package offers:
+
+- **Multithreading support** for parallel objective function evaluations using
+    threading.
+- **Detailed results object** providing in-depth insights into the optimization process
+    suitable for further analysis and visualization.
+- **Type hinting and modern Python implementation**, ensuring maintainability and
+    adherence to best coding practices.
 
 ## 📦 Installation
 
@@ -67,11 +72,14 @@ for easy adoption.
 
 ### Key Parameters
 
-The most important tuning parameters are `n_complexes` and `n_points_complex` for all
-cases, and `pca_freq` and `pca_tol` for cases with highly correlated parameters and/or
-high-dimensional problems. The default values are set to reasonable defaults, but you
-can adjust them based on your specific problem, if needed. Please refer to the
-[API reference](https://sceua.readthedocs.io/en/latest/reference/) for more details.
+The most important tuning parameters are **`n_complexes`** and **`n_points_complex`**
+for all cases, while **`pca_freq`** and **`pca_tol`** are particularly relevant for
+problems with highly correlated parameters and/or high dimensionality. Default values
+are set to reasonable standards, but you can adjust them as needed for your specific
+problem.
+
+For more details, refer to the
+[API reference](https://sceua.readthedocs.io/en/latest/reference/).
 
 ### Example Usage
 
