@@ -327,6 +327,7 @@ def minimize(  # noqa: PLR0915
     -------
     result : Result
         The optimization result with the following fields:
+
         - ``x`` : numpy.ndarray
             The optimal parameters found.
         - ``fun`` : float

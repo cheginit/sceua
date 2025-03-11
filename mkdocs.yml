@@ -89,6 +89,14 @@ markdown_extensions:
 - toc:
     toc_depth: 3
     permalink: '#'
+- pymdownx.arithmatex:
+    generic: true
+- pymdownx.betterem
+- pymdownx.magiclink:
+    normalize_issue_symbols: true
+    repo_url_shorthand: true
+    user: cheginit
+    repo: sceua
 
 extra:
   homepage: https://sceua.readthedocs.io/en/latest/
@@ -104,7 +112,7 @@ nav:
 - Getting Started: README.md
 - Examples:
   - Overview: examples/index.md
-  - Spline Interpolation: examples/dem.ipynb
+  - Spline Interpolation: examples/calibration.ipynb
 - API Reference: reference.md
 - Release Notes: CHANGELOG.md
 - Contributing: CONTRIBUTING.md
@@ -139,3 +147,5 @@ hooks:
 
 extra_css:
 - stylesheets/extra.css
+- javascripts/mathjax.js
+- https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
