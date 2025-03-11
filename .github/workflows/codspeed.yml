@@ -20,6 +20,8 @@ jobs:
         pixi-version: v0.42.1
         environments: benchmark
         activate-environment: benchmark
+        cache: true
+        cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
     - name: Run benchmarks
       uses: CodSpeedHQ/action@v3
       with:
