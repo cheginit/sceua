@@ -288,10 +288,12 @@ sceua = { path = ".", editable = true }
 [tool.pixi.feature.py310.dependencies]
 python = "~=3.10.0"
 proj = "*"
+libgdal-core = "*"
 
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
 proj = "*"
+libgdal-core = "*"
 
 [tool.pixi.environments]
 dev = { features = [ "dev", "py313" ] }
