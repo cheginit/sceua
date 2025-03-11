@@ -40,14 +40,13 @@ dependencies = [
 optional-dependencies.benchmark = [
   "landscapes",
   "numba",
-  "numpy",
   "pandas",
   "pytest-codspeed",
 ]
 optional-dependencies.dev = [
   "folium",
   "geopandas>=1",
-  "hydrosignatures",
+  "hydrosignatures>=0.19.3",
   "ipykernel",
   "ipywidgets",
   "landscapes",
@@ -285,24 +284,27 @@ platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
 [tool.pixi.pypi-dependencies]
 sceua = { path = ".", editable = true }
 
-[tool.pixi.feature.py310.dependencies]
-python = "~=3.10.0"
+[tool.pixi.dependencies]
+hdf5 = "*"
+libnetcdf = "*"
 proj = "*"
 libgdal-core = "*"
+
+[tool.pixi.feature.py310.dependencies]
+python = "~=3.10.0"
+tomli = "*"
 
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
-proj = "*"
-libgdal-core = "*"
 
 [tool.pixi.environments]
-dev = { features = [ "dev", "py313" ] }
 test310 = { features = [ "test", "py310" ] }
 test313 = { features = [ "test", "py313" ] }
+dev = { features = [ "dev", "py313" ] }
 benchmark = { features = [ "benchmark", "py313" ] }
 typecheck = { features = [ "typecheck", "py313" ] }
+docs = { features = [ "docs", "dev", "py313" ] }
 lint = { features = [ "lint", "py313" ], no-default-feature = true }
-docs = { features = [ "docs", "dev" ] }
 
 [tool.pixi.feature.test.tasks]
 test = "pytest --cov --cov-append --cov-branch --cov-report=xml --junitxml=junit.xml"
