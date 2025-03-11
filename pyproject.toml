@@ -8,7 +8,7 @@ requires = [
 
 [project]
 name = "sceua"
-description = "Parameter calibration using Shuffle Complex Evolution algorithm."
+description = "Shuffle Complex Evolution algorithm for Optimization"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
