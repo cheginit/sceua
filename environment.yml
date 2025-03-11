@@ -6,4 +6,17 @@ dependencies:
 - python >=3.10
 - sceua
 # notebooks
+- folium
+- geopandas >=1
+- hydrosignatures >=0.19.3
+- ipykernel
+- ipywidgets
+- landscapes
+- mapclassify
+- matplotlib
+- netcdf4
+- numba
 - pandas >=2
+- pytest
+- rioxarray
+- xarray
