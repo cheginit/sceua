@@ -37,12 +37,24 @@ dependencies = [
   "numpy>=2",
   "scipy>=1.15",
 ]
+optional-dependencies.benchmark = [
+  "pytest-codspeed",
+]
 optional-dependencies.dev = [
-  "pandas>=2",
+  "folium",
+  "geopandas>=1",
+  "hydrosignatures",
   "ipykernel",
   "ipywidgets",
+  "landscapes",
+  "mapclassify",
   "matplotlib",
+  "netcdf4",
+  "numba",
+  "pandas>=2",
   "pytest",
+  "rioxarray",
+  "xarray",
 ]
 optional-dependencies.docs = [
   "black",
@@ -56,6 +68,10 @@ optional-dependencies.lint = [
   "pre-commit",
 ]
 optional-dependencies.test = [
+  "landscapes",
+  "numba",
+  "numpy",
+  "pandas",
   "pytest-cov",
   "pytest-sugar",
 ]
@@ -215,6 +231,9 @@ doctest_optionflags = 'NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER'
 testpaths = [
   "tests",
 ]
+markers = [
+  "benchmark: Tests that are benchmarks",
+]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -269,14 +288,17 @@ sceua = { path = ".", editable = true }
 
 [tool.pixi.feature.py310.dependencies]
 python = "~=3.10.0"
+proj = "*"
 
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
+proj = "*"
 
 [tool.pixi.environments]
 dev = { features = [ "dev", "py313" ] }
 test310 = { features = [ "test", "py310" ] }
 test313 = { features = [ "test", "py313" ] }
+benchmark = { features = [ "benchmark", "py313" ] }
 typecheck = { features = [ "typecheck", "py313" ] }
 lint = { features = [ "lint", "py313" ], no-default-feature = true }
 docs = { features = [ "docs", "dev", "py313" ] }
@@ -285,6 +307,9 @@ docs = { features = [ "docs", "dev", "py313" ] }
 test = "pytest"
 report = { cmd = [ "coverage", "report" ], depends-on = [ "test" ] }
 html = { cmd = [ "coverage", "html" ], depends-on = [ "report" ] }
+
+[tool.pixi.feature.benchmark.tasks]
+benchmark = "pytest tests --codspeed"
 
 [tool.pixi.feature.lint.tasks]
 lint = "pre-commit run --all-files"

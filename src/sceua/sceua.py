@@ -2,22 +2,25 @@
 
 References
 ----------
-[1] Duan, Q., Sorooshian, S., & Gupta, V. K. (1992). Effective and efficient global
-    optimization for conceptual rainfall-runoff models. Water Resources Research,
-    28(4), 1015-1031.
-[2] Duan, Q., Gupta, V. K., & Sorooshian, S. (1994). Optimal use of the SCE-UA global
+- Duan, Q., Sorooshian, S., & Gupta, V. K. (1992). Effective and efficient global
+    optimization for conceptual rainfall-runoff models. Water Resources Research, 28(4),
+    1015-1031. [doi:10.1029/91WR02985](https://doi.org/10.1029/91WR02985)
+- Duan, Q., Gupta, V. K., & Sorooshian, S. (1994). Optimal use of the SCE-UA global
     optimization method for calibrating watershed models. Journal of Hydrology,
     158(3-4), 265-284.
-[3] Duan, Q., Sorooshian, S., & Gupta, V. K. (1994). A shuffled complex evolution
-    approach for effective and efficient global minimization. Journal of optimization
-    theory and applications, 76(3), 501-521.
-[4] Chu, W., Gao, X., & Sorooshian, S. (2010). Improving the shuffled complex evolution
+    [doi:10.1016/0022-1694(94)90057-4](https://doi.org/10.1016/0022-1694(94)90057-4)
+- Duan, Q., Sorooshian, S., & Gupta, V. K. (1994). A shuffled complex evolution approach
+    for effective and efficient global minimization. Journal of optimization theory and
+    applications, 76(3), 501-521.
+    [doi:10.1007/BF00939380](https://doi.org/10.1007/BF00939380)
+- Muttil, N., & Jayawardena, A. W. (2008). Shuffled Complex Evolution model calibrating
+    algorithm: enhancing its robustness and efficiency. Hydrological Processes, 22(23),
+    4628-4638. Portico. [doi:10.1002/hyp.7082](https://doi.org/10.1002/hyp.7082)
+- Chu, W., Gao, X., & Sorooshian, S. (2010). Improving the shuffled complex evolution
     scheme for optimization of complex nonlinear hydrological systems: Application to
-    the calibration of the Sacramento soil-moisture accounting model.
-    Water Resources Research, 46(9). Portico. https://doi.org/10.1029/2010wr009224
-[5] Muttil, N., & Jayawardena, A. W. (2008). Shuffled Complex Evolution model
-    calibrating algorithm: enhancing its robustness and efficiency. Hydrological
-    Processes, 22(23), 4628-4638. Portico. https://doi.org/10.1002/hyp.7082
+    the calibration of the Sacramento soil-moisture accounting model. Water Resources
+    Research, 46(9). Portico.
+    [doi:10.1029/2010wr009224](https://doi.org/10.1029/2010wr009224)
 """
 
 from __future__ import annotations
@@ -37,6 +40,7 @@ if TYPE_CHECKING:
 
     FloatArray = NDArray[np.floating[Any]]
     IntArray = NDArray[np.integer[Any]]
+    FuncType = Callable[[FloatArray, Any], float] | Callable[[FloatArray], float]
 
 
 @dataclass
@@ -77,7 +81,7 @@ def _generate_population(
     lo_bounds: FloatArray,
     up_bounds: FloatArray,
     n: int,
-    x0: FloatArray | None,
+    x0: FloatArray | list[tuple[float, ...]] | None,
     rng: np.random.Generator,
 ) -> FloatArray:
     """Initialize population using Latin Hypercube Sampling."""
@@ -99,8 +103,8 @@ def _generate_population(
     return np.vstack([x0, x_samples]) if len(x0) > 0 else x_samples
 
 
-def _optimize_complex(
-    func: Callable[[FloatArray, Any], float],
+def _evolve_complexes(
+    func: FuncType,
     args: tuple[Any, ...],
     population: FloatArray,
     func_values: FloatArray,
@@ -117,7 +121,8 @@ def _optimize_complex(
     1. Adaptive smoothing parameter (theta) based on problem scale
     2. Best solution is included in every complex
     """
-    # Determine theta following the suggesion from the sambo package
+    # Determine theta following the suggesion
+    # from https://github.com/sambo-optimization/sambo
     # which is based on https://onlinelibrary.wiley.com/doi/10.1002/hyp.7082
     theta = np.interp(
         np.log10(np.ptp(np.c_[lo_bounds, up_bounds], axis=1).max()), (2, 5), (0.2, 0.5)
@@ -215,15 +220,51 @@ def _pca_recovery(
             break
 
 
+def _update_population(
+    pop_x: FloatArray,
+    pop_f: FloatArray,
+    iters: int,
+    pca_freq: int,
+    pca_tol: float,
+    rng: np.random.Generator,
+    lo_bounds: FloatArray,
+    up_bounds: FloatArray,
+    best_f: float,
+    best_x: FloatArray,
+    last_best_f: float,
+    no_change_count: int,
+    tolerance: float,
+) -> tuple[FloatArray, FloatArray, FloatArray, float, int]:
+    """Update population based on the best solution found so far and PCA recovery."""
+    idx = np.argsort(pop_f)
+    pop_x, pop_f = pop_x[idx], pop_f[idx]
+
+    # Check effective dimensionality from https://doi.org/10.1029/2010WR009224
+    if iters % pca_freq == 0:
+        cov = np.cov(pop_x, rowvar=False)
+        eigenvalues = np.linalg.eigvalsh(cov)
+        ratios = eigenvalues / eigenvalues.max()
+        lost_dims = np.sum(ratios < pca_tol)
+        if lost_dims > 0:
+            _pca_recovery(pop_x, lo_bounds, up_bounds, pca_tol, rng)
+
+    if pop_f[0] < best_f:
+        best_x = pop_x[0].copy()
+        best_f = pop_f[0]
+        no_change_count = 0 if abs(last_best_f - best_f) > tolerance else no_change_count + 1
+    else:
+        no_change_count += 1
+
+    return pop_x, pop_f, best_x, best_f, no_change_count
+
+
 def minimize(
-    func: Callable[[FloatArray, Any], float],
+    func: FuncType,
     bounds: Sequence[tuple[float, float]],
     *,
     args: tuple[Any, ...] = (),
     n_complexes: int | None = None,
     n_points_complex: int | None = None,
-    n_points_simplex: int | None = None,
-    n_evolution_steps: int | None = None,
     alpha: float = 1.0,
     beta: float = 0.5,
     max_evals: int = 50000,
@@ -232,10 +273,9 @@ def minimize(
     tolerance: float = 1e-6,
     x_tolerance: float = 1e-8,
     seed: int | None = None,
-    pca_freq: int = 10,
+    pca_freq: int = 1,
     pca_tol: float = 1e-3,
-    eff_rank_thresh: float = 0.1,
-    x0: FloatArray | None = None,
+    x0: FloatArray | list[tuple[float, ...]] | None = None,
     max_workers: int = 1,
 ) -> Result:
     """Minimize a function using an improved SCE-UA algorithm.
@@ -254,11 +294,6 @@ def minimize(
         Number of complexes, defaults to ``None`` (adaptive based on dimensionality).
     n_points_complex : int, optional
         Number of points in each complex. If ``None``, calculated automatically.
-    n_points_simplex : int, optional
-        Number of points in each simplex. If ``None``, calculated automatically.
-    n_evolution_steps : int, optional
-        Number of evolution steps for each complex. If ``None``, set equal to
-        ``n_points_complex``.
     alpha : float, optional
         Reflection coefficient, defaults to 1.0.
     beta : float, optional
@@ -276,15 +311,12 @@ def minimize(
     seed : int, optional
         Random seed for reproducibility, defaults to ``None``.
     pca_freq : int, optional
-        Frequency of PCA recovery, defaults to 10, i.e., every 10 iterations.
+        Frequency of PCA recovery, defaults to 1, i.e., every iterations.
     pca_tol : float, optional
         Tolerance for PCA recovery, defaults to 1e-3.
         This is the threshold for eigenvalues to be considered significant.
-        If the effective rank of the covariance matrix is below this value,
-        the population will be perturbed to recover lost dimensions.
-    eff_rank_thresh : float, optional
-        Threshold for effective rank, defaults to 0.1, i.e., 10% of the
-        dimensionality of the problem.
+        This threshold is used to apply PCA recovery based on the ratio of
+        eigenvalues to the maximum eigenvalue, i.e., ``eig / max(eig) < pca_tol``.
     x0 : numpy.ndarray, optional
         Initial parameter sets to evaluate, defaults to ``None``.
     max_workers : int, optional
@@ -315,9 +347,6 @@ def minimize(
     if not callable(func):
         raise TypeError("`func` must be a callable function.")
 
-    xv = cast("list[FloatArray]", [])
-    funv = cast("list[float]", [])
-
     try:
         lo_bounds, up_bounds = np.atleast_2d(bounds).T
     except ValueError as e:
@@ -325,7 +354,10 @@ def minimize(
     if np.any(lo_bounds >= up_bounds):
         raise ValueError("Lower bounds must be less than upper bounds.")
 
+    xv, funv = cast("list[FloatArray]", []), cast("list[float]", [])
+
     def objective(x: FloatArray, *args: Any) -> float:
+        """Objective function wrapper to store evaluated points."""
         nonlocal xv, funv
         y = func(x, *args)
         xv.append(x.copy())
@@ -336,8 +368,6 @@ def minimize(
     if (isinstance(n_complexes, Number) and n_complexes < 2) or n_complexes is None:
         n_complexes = min(max(2, int(np.log2(len(bounds))) + 5), 15)
     n_points_complex = 2 * n_complexes + 1 if n_points_complex is None else n_points_complex
-    n_points_simplex = n_complexes + 1 if n_points_simplex is None else n_points_simplex
-    n_evolution_steps = n_points_complex if n_evolution_steps is None else n_evolution_steps
 
     rng = np.random.default_rng(seed)
     n_pop = n_points_complex * n_complexes
@@ -349,46 +379,40 @@ def minimize(
         pop_f = np.asarray([objective(x, *args) for x in pop_x])
 
     idx = np.argsort(pop_f)
-    pop_x = pop_x[idx]
-    pop_f = pop_f[idx]
-
-    best_x = pop_x[0].copy()
-    best_f = pop_f[0]
+    pop_x, pop_f = pop_x[idx], pop_f[idx]
+    best_x, best_f = pop_x[0].copy(), pop_f[0]
     last_best_f = best_f
 
     iters = 0
     no_change_count = 0
     message = "Maximum iterations reached"
     n_evals = len(xv)
+    max_evals = max(max_evals, n_pop * 2)
     while n_evals < max_evals and iters < max_iter and no_change_count < max_tolerant_iter:
         # Create complex indices with best solution (index 0) in every complex
-        # based on a suggestion from the sambo package
+        # based on a suggestion from https://github.com/sambo-optimization/sambo
         complex_idx = (np.hstack((0, np.arange(k, n_pop, n_complexes))) for k in range(n_complexes))
         _ = [
-            _optimize_complex(
+            _evolve_complexes(
                 objective, args, pop_x, pop_f, idx, lo_bounds, up_bounds, rng, alpha, beta
             )
             for idx in complex_idx
         ]
-
-        idx = np.argsort(pop_f)
-        pop_x = pop_x[idx]
-        pop_f = pop_f[idx]
-
-        # Check effective dimensionality from https://doi.org/10.1029/2010WR009224
-        if iters % pca_freq == 0:
-            cov = np.cov(pop_x, rowvar=False)
-            dim = pop_x.shape[1]
-            rank = np.linalg.matrix_rank(cov, tol=1e-3 * np.max(np.linalg.eigvalsh(cov)))
-            if rank < eff_rank_thresh * dim:
-                _pca_recovery(pop_x, lo_bounds, up_bounds, pca_tol, rng)
-
-        if pop_f[0] < best_f:
-            best_x = pop_x[0].copy()
-            best_f = pop_f[0]
-            no_change_count = 0 if abs(last_best_f - best_f) > tolerance else no_change_count + 1
-        else:
-            no_change_count += 1
+        pop_x, pop_f, best_x, best_f, no_change_count = _update_population(
+            pop_x,
+            pop_f,
+            iters,
+            pca_freq,
+            pca_tol,
+            rng,
+            lo_bounds,
+            up_bounds,
+            best_f,
+            best_x,
+            last_best_f,
+            no_change_count,
+            tolerance,
+        )
 
         last_best_f = best_f
         iters += 1
