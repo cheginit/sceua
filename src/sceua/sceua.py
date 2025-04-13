@@ -28,19 +28,25 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from numbers import Number
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast, runtime_checkable
 
 import numpy as np
 from scipy.stats import qmc
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Sequence
 
     from numpy.typing import NDArray
 
     FloatArray = NDArray[np.floating[Any]]
     IntArray = NDArray[np.integer[Any]]
-    FuncType = Callable[[FloatArray, Any], float] | Callable[[FloatArray], float]
+
+
+@runtime_checkable
+class FuncType(Protocol):
+    """Protocol for the objective function."""
+
+    def __call__(self, x: FloatArray, *args: Any) -> float: ...  # noqa: D102
 
 
 @dataclass
@@ -345,7 +351,7 @@ def minimize(  # noqa: PLR0915
         - ``funv`` : numpy.ndarray
             Function values for all evaluated parameter vectors.
     """
-    if not callable(func):
+    if not isinstance(func, FuncType):
         raise TypeError("`func` must be a callable function.")
 
     try:
