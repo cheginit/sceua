@@ -26,9 +26,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: prefix-dev/setup-pixi@v0.8.3
+    - uses: prefix-dev/setup-pixi@v0.8.5
       with:
-        pixi-version: v0.42.1
+        pixi-version: v0.45.0
         environments: ${{ matrix.environment }}
         activate-environment: ${{ matrix.environment }}
         cache: true
