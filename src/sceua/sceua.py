@@ -94,6 +94,8 @@ def _generate_population(
         x0 = np.atleast_2d(np.asarray(x0, dtype=np.float64))
         if x0.shape[1] != n_dim:
             raise ValueError(f"x0 must have shape (n, {n_dim})")
+        if np.any((x0 < lo_bounds) | (x0 > up_bounds)):
+            raise ValueError("x0 must lie within bounds")
 
     remaining = max(0, n - len(x0))
     if remaining == 0:
@@ -320,7 +322,7 @@ def minimize(  # noqa: PLR0915
         This threshold is used to apply PCA recovery based on the ratio of
         eigenvalues to the maximum eigenvalue, i.e., ``eig / max(eig) < pca_tol``.
     x0 : numpy.ndarray, optional
-        Initial parameter sets to evaluate, defaults to ``None``.
+        Initial parameter sets to evaluate, each within ``bounds``, defaults to ``None``.
     max_workers : int, optional
         Number of workers for parallel execution, defaults to 1 (no parallelism).
         This is passed to the ``ThreadPoolExecutor``.
