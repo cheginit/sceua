@@ -396,7 +396,10 @@ def minimize(  # noqa: PLR0915
     while n_evals < max_evals and iters < max_iter and no_change_count < max_tolerant_iter:
         # Create complex indices with best solution (index 0) in every complex
         # based on a suggestion from https://github.com/sambo-optimization/sambo
-        complex_idx = (np.hstack((0, np.arange(k, n_pop, n_complexes))) for k in range(n_complexes))
+        # Index 0 is listed once: a duplicate would let the old best overwrite a new one.
+        complex_idx = (
+            np.unique(np.r_[0, np.arange(k, n_pop, n_complexes)]) for k in range(n_complexes)
+        )
         _ = [
             _evolve_complexes(
                 objective, args, pop_x, pop_f, idx, lo_bounds, up_bounds, rng, alpha, beta

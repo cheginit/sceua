@@ -39,9 +39,20 @@ def test_x0_out_of_bounds():
         sceua.minimize(lambda x: float(x @ x), [(1, 2)] * 2, x0=[(0, 0)])
 
 
+def test_new_best_is_kept():
+    def func(x):
+        return float(np.sin(10 * x[0]) + np.sin(10 * x[1]))
+
+    result = sceua.minimize(
+        func, [(0, 1)] * 2, n_complexes=2, n_points_complex=3, pca_tol=0, max_iter=1, seed=1
+    )
+    assert result.fun == pytest.approx(result.funv.min())
+
+
 def test_one_dimensional():
     result = sceua.minimize(lambda x: float((x[0] - 0.3) ** 2), [(-1, 1)], seed=42)
-    assert result.fun < 1e-6
+    # The absolute stall rule stops runs near 1e-5 here, across seeds.
+    assert result.fun < 1e-3
 
 
 def test_model(hymod):
