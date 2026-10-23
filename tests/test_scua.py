@@ -86,6 +86,30 @@ def test_integer_objective_values():
     assert func(result.x) == pytest.approx(result.fun)
 
 
+def test_finite_value_replaces_nan_best():
+    def func(x):
+        return np.nan if np.all(x > 0.8) else float(x @ x)
+
+    result = sceua.minimize(
+        func,
+        [(0, 1)] * 2,
+        x0=np.full((6, 2), 0.9),
+        n_complexes=2,
+        n_points_complex=3,
+        max_iter=2,
+        seed=0,
+    )
+    assert result.success
+    assert func(result.x) == pytest.approx(result.fun)
+    assert result.fun == np.nanmin(result.funv)
+
+
+def test_all_nan_objective_is_not_success():
+    result = sceua.minimize(lambda _: np.nan, [(0, 1)] * 2, seed=0)
+    assert not result.success
+    assert "NaN" in result.message
+
+
 def test_single_point_complexes_get_finite_points():
     result = sceua.minimize(
         lambda x: float(x @ x), [(0, 1)] * 2, n_complexes=2, n_points_complex=1, max_iter=2, seed=0
