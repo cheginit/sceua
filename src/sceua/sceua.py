@@ -328,7 +328,9 @@ def minimize(  # noqa: PLR0915
     beta : float, optional
         Contraction coefficient, defaults to 0.5.
     max_evals : int, optional
-        Maximum number of function evaluations, defaults to 50000.
+        Maximum number of function evaluations, defaults to 50000. It must be at
+        least the population size, ``n_complexes * n_points_complex``. The budget is
+        checked once per iteration, so the last iteration can exceed it slightly.
     max_iter : int, optional
         Maximum number of iterations, defaults to 1000.
     max_tolerant_iter : int, optional
@@ -403,6 +405,11 @@ def minimize(  # noqa: PLR0915
 
     rng = np.random.default_rng(seed)
     n_pop = n_points_complex * n_complexes
+    if max_evals < n_pop:
+        raise ValueError(
+            f"max_evals ({max_evals}) must be at least the population size, "
+            f"n_complexes * n_points_complex = {n_pop}"
+        )
     pop_x = _generate_population(lo_bounds, up_bounds, n_pop, x0, rng)
     # Float dtype, else integer initial values would truncate later scores.
     if max_workers > 1:
@@ -422,7 +429,6 @@ def minimize(  # noqa: PLR0915
     no_change_count = 0
     message = "Maximum iterations reached"
     n_evals = len(xv)
-    max_evals = max(max_evals, n_pop * 2)
     while n_evals < max_evals and iters < max_iter and no_change_count < max_tolerant_iter:
         # Create complex indices with best solution (index 0) in every complex
         # based on a suggestion from https://github.com/sambo-optimization/sambo
