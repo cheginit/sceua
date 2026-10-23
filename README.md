@@ -25,27 +25,27 @@ This implementation of the **SCE-UA** algorithm incorporates several major impro
 from the literature over the original 1994 version. These enhancements include:
 
 - **Adaptive smoothing parameter (θ)** that adjusts based on problem scale, improving
-  numerical stability and convergence.
+    numerical stability and convergence.
 - **Latin Hypercube Sampling (LHS)** for initial population generation, ensuring better
-  parameter space coverage compared to uniform random sampling.
+    parameter space coverage compared to uniform random sampling.
 - **PCA-based recovery mechanism** to detect and restore lost dimensions in the
-  population.
+    population.
 - **Best solution inclusion** in every complex to accelerate convergence.
 - **Optimized complex evolution strategy** with enhanced reflection, contraction, and
-  mutation operations.
+    mutation operations.
 - **Automatic parameter determination** with sensible defaults based on problem
-  dimensionality.
+    dimensionality.
 - **Comprehensive convergence criteria**, including function value tolerance, parameter
-  tolerance, and maximum iterations.
+    tolerance, and maximum iterations.
 
 Additionally, the package offers:
 
 - **Multithreading support** for parallel objective function evaluations using
-  threading.
+    threading.
 - **Detailed results object** providing in-depth insights into the optimization process
-  suitable for further analysis and visualization.
+    suitable for further analysis and visualization.
 - **Type hinting and modern Python implementation**, ensuring maintainability and
-  adherence to best coding practices.
+    adherence to best coding practices.
 
 ## 📦 Installation
 
@@ -174,24 +174,24 @@ Check the [docs](https://sceua.readthedocs.io) for more examples and API details
 This package is based on the following references:
 
 - Duan, Q., Sorooshian, S., & Gupta, V. K. (1992). Effective and efficient global
-  optimization for conceptual rainfall-runoff models. Water Resources Research, 28(4),
-  1015-1031. [doi:10.1029/91WR02985](https://doi.org/10.1029/91WR02985)
+    optimization for conceptual rainfall-runoff models. Water Resources Research, 28(4),
+    1015-1031. [doi:10.1029/91WR02985](https://doi.org/10.1029/91WR02985)
 - Duan, Q., Gupta, V. K., & Sorooshian, S. (1994). Optimal use of the SCE-UA global
-  optimization method for calibrating watershed models. Journal of Hydrology, 158(3-4),
-  265-284.
-  [doi:10.1016/0022-1694(94)90057-4](<https://doi.org/10.1016/0022-1694(94)90057-4>)
+    optimization method for calibrating watershed models. Journal of Hydrology,
+    158(3-4), 265-284.
+    [doi:10.1016/0022-1694(94)90057-4](<https://doi.org/10.1016/0022-1694(94)90057-4>)
 - Duan, Q., Sorooshian, S., & Gupta, V. K. (1994). A shuffled complex evolution approach
-  for effective and efficient global minimization. Journal of optimization theory and
-  applications, 76(3), 501-521.
-  [doi:10.1007/BF00939380](https://doi.org/10.1007/BF00939380)
+    for effective and efficient global minimization. Journal of optimization theory and
+    applications, 76(3), 501-521.
+    [doi:10.1007/BF00939380](https://doi.org/10.1007/BF00939380)
 - Muttil, N., & Jayawardena, A. W. (2008). Shuffled Complex Evolution model calibrating
-  algorithm: enhancing its robustness and efficiency. Hydrological Processes, 22(23),
-  4628-4638. Portico. [doi:10.1002/hyp.7082](https://doi.org/10.1002/hyp.7082)
+    algorithm: enhancing its robustness and efficiency. Hydrological Processes, 22(23),
+    4628-4638. Portico. [doi:10.1002/hyp.7082](https://doi.org/10.1002/hyp.7082)
 - Chu, W., Gao, X., & Sorooshian, S. (2010). Improving the shuffled complex evolution
-  scheme for optimization of complex nonlinear hydrological systems: Application to the
-  calibration of the Sacramento soil-moisture accounting model. Water Resources
-  Research, 46(9). Portico.
-  [doi:10.1029/2010wr009224](https://doi.org/10.1029/2010wr009224)
+    scheme for optimization of complex nonlinear hydrological systems: Application to
+    the calibration of the Sacramento soil-moisture accounting model. Water Resources
+    Research, 46(9). Portico.
+    [doi:10.1029/2010wr009224](https://doi.org/10.1029/2010wr009224)
 
 Additionally, some ideas were inspired by [UQPyL](https://github.com/smasky/UQPyL) and
 [SAMBO](https://github.com/sambo-optimization/sambo) Python packages.
