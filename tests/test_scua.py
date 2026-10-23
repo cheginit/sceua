@@ -34,6 +34,11 @@ def test_integer_x0():
     assert func(result.x) == pytest.approx(result.fun)
 
 
+def test_x0_out_of_bounds():
+    with pytest.raises(ValueError, match="x0"):
+        sceua.minimize(lambda x: float(x @ x), [(1, 2)] * 2, x0=[(0, 0)])
+
+
 def test_one_dimensional():
     result = sceua.minimize(lambda x: float((x[0] - 0.3) ** 2), [(-1, 1)], seed=42)
     assert result.fun < 1e-6
