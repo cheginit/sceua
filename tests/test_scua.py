@@ -32,8 +32,9 @@ def test_result_invariants(case, seed, hymod):
     assert len(result.xv) == len(result.funv) == result.nfev
 
 
-def test_max_evals_overshoot_is_bounded():
-    n_complexes, n_points_complex, max_evals = 4, 9, 200
+@pytest.mark.parametrize("max_evals", [50, 200])
+def test_max_evals_overshoot_is_bounded(max_evals):
+    n_complexes, n_points_complex = 4, 9
     result = sceua.minimize(
         single_objective.rosenbrock,
         [(-5, 5)] * 10,
@@ -47,6 +48,19 @@ def test_max_evals_overshoot_is_bounded():
     # plus the points moved by PCA recovery.
     n_moved = max(1, int(0.1 * n_complexes * n_points_complex))
     assert max_evals <= result.nfev <= max_evals - 1 + 3 * n_complexes + n_moved
+
+
+def test_max_evals_below_population_raises():
+    calls = []
+    with pytest.raises(ValueError, match="max_evals"):
+        sceua.minimize(
+            lambda x: calls.append(x) or 0.0,
+            [(0, 1)] * 2,
+            n_complexes=4,
+            n_points_complex=9,
+            max_evals=20,
+        )
+    assert not calls
 
 
 def test_x0():
@@ -194,5 +208,7 @@ def test_rosenbrock():
     ],
 )
 def test_objective(func, b1, b2, n_complexes, expected):
-    result = sceua.minimize(func, [b1, b2], seed=42, n_complexes=n_complexes)
+    # The population, n_complexes * (2 * n_complexes + 1), exceeds the default budget.
+    max_evals = 2 * n_complexes * (2 * n_complexes + 1)
+    result = sceua.minimize(func, [b1, b2], seed=42, n_complexes=n_complexes, max_evals=max_evals)
     assert abs(result.fun - expected) < 1e-2
