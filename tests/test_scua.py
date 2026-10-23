@@ -6,6 +6,7 @@ import pytest
 from landscapes import single_objective
 
 import sceua
+from sceua.sceua import _pca_recovery
 
 
 def test_x0():
@@ -58,6 +59,22 @@ def test_one_dimensional():
 def test_model(hymod):
     result = sceua.minimize(hymod.fit, hymod.bounds, seed=42, n_complexes=3 * len(hymod.bounds))
     assert result.success
+
+
+def test_pca_recovery_evaluates_moved_points():
+    def func(x):
+        return float(x.sum())
+
+    rng = np.random.default_rng(0)
+    t = np.sort(rng.random(20))
+    population = np.c_[t, 0.5 * t]  # collinear, so one direction is lost
+    values = np.array([func(x) for x in population])
+    best = population[0].copy()
+    moved = _pca_recovery(func, (), population, values, np.zeros(2), np.ones(2), 1e-3, rng)
+    assert moved
+    assert np.array_equal(population[0], best)
+    assert np.allclose(values, [func(x) for x in population])
+    assert not np.allclose(population[:, 1], 0.5 * population[:, 0])
 
 
 def test_rosenbrock():
