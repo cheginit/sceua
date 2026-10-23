@@ -122,3 +122,22 @@ WBT
 
 # pytest --basetemp
 .pytest_tmp/
+
+# Zensical build output
+**/site/
+# Pages generated from the notebooks in docs/examples/ by `pixi r docs`
+/docs/examples/*.md
+!/docs/examples/index.md
+/docs/examples/*_files/
+
+# AI agents. AGENTS.md and .agents/skills/ are the shared files; .claude/skills links to
+# the latter. The negations override a global ignore of these directories.
+!/.agents/
+/.agents/*
+!/.agents/skills
+!/.claude/
+/.claude/*
+!/.claude/skills
+# Claude Code skips AGENTS.md when a CLAUDE.md exists, so keep personal ones out.
+CLAUDE.md
+CLAUDE.local.md
