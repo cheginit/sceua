@@ -8,6 +8,46 @@ from landscapes import single_objective
 import sceua
 from sceua.sceua import _pca_recovery
 
+MIXED_SCALE = np.array([1e3, 1, 1e-2, 1, 1])
+
+
+def mixed_scale_sphere(x):
+    return float(np.sum(((x - 0.3 * MIXED_SCALE) / MIXED_SCALE) ** 2))
+
+
+@pytest.mark.parametrize("seed", range(5))
+@pytest.mark.parametrize("case", ["hymod", "mixed_scale", "one_dimensional"])
+def test_result_invariants(case, seed, hymod):
+    func, bounds = {
+        "hymod": (hymod.fit, hymod.bounds),
+        "mixed_scale": (mixed_scale_sphere, [(-5 * s, 5 * s) for s in MIXED_SCALE]),
+        "one_dimensional": (lambda x: float(np.cos(5 * x[0]) + x[0] ** 2), [(-2, 2)]),
+    }[case]
+    lo, up = np.array(bounds, dtype=float).T
+    result = sceua.minimize(func, bounds, seed=seed)
+    assert func(result.x) == pytest.approx(result.fun)
+    assert result.fun == result.funv.min()
+    assert np.all(result.xv == result.x, axis=1).any()
+    assert np.all((result.xv >= lo) & (result.xv <= up))
+    assert len(result.xv) == len(result.funv) == result.nfev
+
+
+def test_max_evals_overshoot_is_bounded():
+    n_complexes, n_points_complex, max_evals = 4, 9, 200
+    result = sceua.minimize(
+        single_objective.rosenbrock,
+        [(-5, 5)] * 10,
+        n_complexes=n_complexes,
+        n_points_complex=n_points_complex,
+        max_evals=max_evals,
+        max_tolerant_iter=10**6,
+        seed=0,
+    )
+    # An iteration starts below the budget and adds up to three evaluations per complex
+    # plus the points moved by PCA recovery.
+    n_moved = max(1, int(0.1 * n_complexes * n_points_complex))
+    assert max_evals <= result.nfev <= max_evals - 1 + 3 * n_complexes + n_moved
+
 
 def test_x0():
     b1 = (-10, 10)
