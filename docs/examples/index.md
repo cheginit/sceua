@@ -14,4 +14,7 @@ This will create a new environment called `sceua` with all the required packages
 - [![Calibration](images/convergence.png){ loading=lazy }](calibration.ipynb "Calibration")
   **Calibration**
 
+- [![Reliable Calibration](images/reliability.png){ loading=lazy }](reliability.ipynb "Reliable Calibration")
+  **Reliable Calibration**
+
 </div>
