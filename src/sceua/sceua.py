@@ -206,7 +206,8 @@ def _pca_recovery(
         Lower and upper bounds.
     tol : float
         Tolerance factor to decide if a dimension is lost, by comparing
-        each eigenvalue to ``tol * max(eigenvalue)``.
+        each eigenvalue to ``tol * max(eigenvalue)``, with parameters scaled
+        to [0, 1] by the bounds.
     rng : numpy.random.Generator
         Random number generator.
 
@@ -215,31 +216,28 @@ def _pca_recovery(
     bool
         Whether any point was moved.
     """
-    if population.shape[0] < 2:
+    n_indiv, n_dim = population.shape
+    # A single parameter has no direction to lose.
+    if n_indiv < 2 or n_dim < 2:
         return False
 
-    mean_vec = np.mean(population, axis=0)
-    x_centered = population - mean_vec
-    cov = np.cov(x_centered, rowvar=False)
-    eigenvalues, eigenvectors = np.linalg.eigh(cov)
-    max_eig = np.max(eigenvalues)
+    # Bound-scaled units, so parameter units do not decide which direction looks lost.
+    span = up_bounds - lo_bounds
+    scaled = (population - lo_bounds) / span
+    eigenvalues, eigenvectors = np.linalg.eigh(np.cov(scaled, rowvar=False))
+    # eigh sorts eigenvalues in ascending order, so the first is the most collapsed direction.
+    if eigenvalues[0] >= tol * eigenvalues[-1]:
+        return False
 
-    # Check for any lost (nearly zero variance) dimensions.
-    for i, eig in enumerate(eigenvalues):
-        if eig < tol * max_eig:
-            direction = eigenvectors[:, i]
-            n_indiv = population.shape[0]
-            n_to_perturb = max(1, int(0.1 * n_indiv))  # perturb 10% of individuals
-            indices = 1 + rng.choice(n_indiv - 1, n_to_perturb, replace=False)
-            factor = 0.05 * (up_bounds - lo_bounds).mean()  # scale factor
-            for idx in indices:
-                scalar = rng.random() * factor
-                population[idx] = np.clip(
-                    population[idx] + scalar * direction, lo_bounds, up_bounds
-                )
-                func_values[idx] = func(population[idx], *args)
-            return True
-    return False
+    direction = eigenvectors[:, 0]
+    n_to_perturb = max(1, int(0.1 * n_indiv))  # perturb 10% of individuals
+    indices = 1 + rng.choice(n_indiv - 1, n_to_perturb, replace=False)
+    for idx in indices:
+        step = 0.05 * rng.random()  # up to 5% of the bound range
+        shifted = np.clip(scaled[idx] + step * direction, 0.0, 1.0)
+        population[idx] = np.clip(lo_bounds + shifted * span, lo_bounds, up_bounds)
+        func_values[idx] = func(population[idx], *args)
+    return True
 
 
 def _update_population(
@@ -264,17 +262,11 @@ def _update_population(
     pop_x, pop_f = pop_x[idx], pop_f[idx]
 
     # Check effective dimensionality from https://doi.org/10.1029/2010WR009224
-    # A single parameter has no direction to lose.
-    if pop_x.shape[1] > 1 and iters % pca_freq == 0:
-        cov = np.cov(pop_x, rowvar=False)
-        eigenvalues = np.linalg.eigvalsh(cov)
-        ratios = eigenvalues / eigenvalues.max()
-        lost_dims = np.sum(ratios < pca_tol)
-        if lost_dims > 0 and _pca_recovery(
-            func, args, pop_x, pop_f, lo_bounds, up_bounds, pca_tol, rng
-        ):
-            idx = np.argsort(pop_f)
-            pop_x, pop_f = pop_x[idx], pop_f[idx]
+    if iters % pca_freq == 0 and _pca_recovery(
+        func, args, pop_x, pop_f, lo_bounds, up_bounds, pca_tol, rng
+    ):
+        idx = np.argsort(pop_f)
+        pop_x, pop_f = pop_x[idx], pop_f[idx]
 
     if pop_f[0] < best_f:
         best_x = pop_x[0].copy()
@@ -344,7 +336,8 @@ def minimize(  # noqa: PLR0915
         Tolerance for PCA recovery, defaults to 1e-3.
         This is the threshold for eigenvalues to be considered significant.
         This threshold is used to apply PCA recovery based on the ratio of
-        eigenvalues to the maximum eigenvalue, i.e., ``eig / max(eig) < pca_tol``.
+        eigenvalues to the maximum eigenvalue, i.e., ``eig / max(eig) < pca_tol``,
+        computed with each parameter scaled to [0, 1] by its bounds.
     x0 : numpy.ndarray, optional
         Initial parameter sets to evaluate, each within ``bounds``, defaults to ``None``.
     max_workers : int, optional

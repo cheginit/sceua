@@ -77,6 +77,14 @@ def test_pca_recovery_evaluates_moved_points():
     assert not np.allclose(population[:, 1], 0.5 * population[:, 0])
 
 
+def test_pca_recovery_ignores_parameter_units():
+    lo, up = np.array([(1, 1500), (0.0, 1.99), (0.01, 0.99), (0.01, 0.14), (0.14, 0.99)]).T
+    rng = np.random.default_rng(0)
+    population = lo + rng.random((100, 5)) * (up - lo)  # spread evenly in every parameter
+    values = np.zeros(100)
+    assert not _pca_recovery(lambda _: 0.0, (), population, values, lo, up, 1e-3, rng)
+
+
 def test_rosenbrock():
     n_dim = 20
     result = sceua.minimize(
