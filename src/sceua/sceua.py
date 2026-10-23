@@ -124,6 +124,10 @@ def _evolve_complexes(
     1. Adaptive smoothing parameter (theta) based on problem scale
     2. Best solution is included in every complex
     """
+    # A lone point has no centroid to reflect through.
+    if len(complex_indices) < 2:
+        return
+
     # Determine theta following the suggesion
     # from https://github.com/sambo-optimization/sambo
     # which is based on https://onlinelibrary.wiley.com/doi/10.1002/hyp.7082
