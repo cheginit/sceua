@@ -94,9 +94,11 @@ def _generate_population(
         # Float dtype, else offspring written into an integer population get truncated.
         x0 = np.atleast_2d(np.asarray(x0, dtype=np.float64))
         if x0.shape[1] != n_dim:
-            raise ValueError(f"x0 must have shape (n, {n_dim})")
+            msg = f"x0 must have shape (n, {n_dim})"
+            raise ValueError(msg)
         if np.any((x0 < lo_bounds) | (x0 > up_bounds)):
-            raise ValueError("x0 must lie within bounds")
+            msg = "x0 must lie within bounds"
+            raise ValueError(msg)
 
     remaining = max(0, n - len(x0))
     if remaining == 0:
@@ -105,6 +107,42 @@ def _generate_population(
     x_samples = qmc.LatinHypercube(n_dim, rng=rng).random(remaining)
     x_samples = qmc.scale(x_samples, lo_bounds, up_bounds)
     return np.vstack([x0, x_samples]) if len(x0) > 0 else x_samples
+
+
+def _parse_bounds(bounds: Sequence[tuple[float, float]]) -> tuple[FloatArray, FloatArray]:
+    """Split ``bounds`` into lower and upper arrays, checking that each lower is below its upper."""
+    try:
+        lo_bounds, up_bounds = np.atleast_2d(bounds).T
+    except ValueError as e:
+        msg = "Bounds must be a sequence of (min, max) pairs."
+        raise ValueError(msg) from e
+    if np.any(lo_bounds >= up_bounds):
+        msg = "Lower bounds must be less than upper bounds."
+        raise ValueError(msg)
+    return lo_bounds, up_bounds
+
+
+def _complex_sizes(
+    n_complexes: int | None, n_points_complex: int | None, n_dim: int
+) -> tuple[int, int]:
+    """Fill in the number of complexes and points per complex, following the literature."""
+    if (isinstance(n_complexes, Number) and n_complexes < 2) or n_complexes is None:
+        n_complexes = min(max(2, int(np.log2(n_dim)) + 5), 15)
+    n_points_complex = 2 * n_complexes + 1 if n_points_complex is None else n_points_complex
+    return n_complexes, n_points_complex
+
+
+def _evaluate(
+    func: Callable[[FloatArray], float], population: FloatArray, max_workers: int
+) -> FloatArray:
+    """Evaluate every point of ``population``, in a thread pool when ``max_workers > 1``."""
+    if max_workers > 1:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            values = list(executor.map(func, population))
+    else:
+        values = [func(x) for x in population]
+    # Float dtype, else integer initial values would truncate later scores.
+    return np.asarray(values, dtype=np.float64)
 
 
 def _improves(value: float, current: float) -> bool:
@@ -118,6 +156,7 @@ def _evolve_complexes(
     population: FloatArray,
     func_values: FloatArray,
     complex_indices: IntArray,
+    *,
     lo_bounds: FloatArray,
     up_bounds: FloatArray,
     rng: np.random.Generator,
@@ -194,6 +233,7 @@ def _pca_recovery(
     args: tuple[Any, ...],
     population: FloatArray,
     func_values: FloatArray,
+    *,
     lo_bounds: FloatArray,
     up_bounds: FloatArray,
     tol: float,
@@ -255,6 +295,7 @@ def _update_population(
     args: tuple[Any, ...],
     pop_x: FloatArray,
     pop_f: FloatArray,
+    *,
     iters: int,
     pca_freq: int,
     pca_tol: float,
@@ -273,7 +314,7 @@ def _update_population(
 
     # Check effective dimensionality from https://doi.org/10.1029/2010WR009224
     if iters % pca_freq == 0 and _pca_recovery(
-        func, args, pop_x, pop_f, lo_bounds, up_bounds, pca_tol, rng
+        func, args, pop_x, pop_f, lo_bounds=lo_bounds, up_bounds=up_bounds, tol=pca_tol, rng=rng
     ):
         idx = np.argsort(pop_f)
         pop_x, pop_f = pop_x[idx], pop_f[idx]
@@ -289,7 +330,7 @@ def _update_population(
     return pop_x, pop_f, best_x, best_f, no_change_count
 
 
-def minimize(  # noqa: PLR0915
+def minimize(
     func: FuncType,
     bounds: Sequence[tuple[float, float]],
     *,
@@ -381,14 +422,9 @@ def minimize(  # noqa: PLR0915
             Function values for all evaluated parameter vectors.
     """
     if not callable(func):
-        raise TypeError("`func` must be a callable function.")
-
-    try:
-        lo_bounds, up_bounds = np.atleast_2d(bounds).T
-    except ValueError as e:
-        raise ValueError("Bounds must be a sequence of (min, max) pairs.") from e
-    if np.any(lo_bounds >= up_bounds):
-        raise ValueError("Lower bounds must be less than upper bounds.")
+        msg = "`func` must be a callable function."
+        raise TypeError(msg)
+    lo_bounds, up_bounds = _parse_bounds(bounds)
 
     xv, funv = cast("list[FloatArray]", []), cast("list[float]", [])
 
@@ -400,27 +436,17 @@ def minimize(  # noqa: PLR0915
         funv.append(y)
         return y
 
-    # Initialize SCE-UA parameters based on suggestions from the literature
-    if (isinstance(n_complexes, Number) and n_complexes < 2) or n_complexes is None:
-        n_complexes = min(max(2, int(np.log2(len(bounds))) + 5), 15)
-    n_points_complex = 2 * n_complexes + 1 if n_points_complex is None else n_points_complex
-
+    n_complexes, n_points_complex = _complex_sizes(n_complexes, n_points_complex, len(bounds))
     rng = np.random.default_rng(seed)
     n_pop = n_points_complex * n_complexes
     if max_evals < n_pop:
-        raise ValueError(
+        msg = (
             f"max_evals ({max_evals}) must be at least the population size, "
             f"n_complexes * n_points_complex = {n_pop}"
         )
+        raise ValueError(msg)
     pop_x = _generate_population(lo_bounds, up_bounds, n_pop, x0, rng)
-    # Float dtype, else integer initial values would truncate later scores.
-    if max_workers > 1:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            pop_f = np.asarray(
-                list(executor.map(lambda x: objective(x, *args), pop_x)), dtype=np.float64
-            )
-    else:
-        pop_f = np.asarray([objective(x, *args) for x in pop_x], dtype=np.float64)
+    pop_f = _evaluate(lambda x: objective(x, *args), pop_x, max_workers)
 
     idx = np.argsort(pop_f)
     pop_x, pop_f = pop_x[idx], pop_f[idx]
@@ -438,28 +464,35 @@ def minimize(  # noqa: PLR0915
         complex_idx = (
             np.unique(np.r_[0, np.arange(k, n_pop, n_complexes)]) for k in range(n_complexes)
         )
-        _ = [
+        for idx in complex_idx:
             _evolve_complexes(
-                objective, args, pop_x, pop_f, idx, lo_bounds, up_bounds, rng, alpha, beta
+                objective,
+                args,
+                pop_x,
+                pop_f,
+                idx,
+                lo_bounds=lo_bounds,
+                up_bounds=up_bounds,
+                rng=rng,
+                alpha=alpha,
+                beta=beta,
             )
-            for idx in complex_idx
-        ]
         pop_x, pop_f, best_x, best_f, no_change_count = _update_population(
             objective,
             args,
             pop_x,
             pop_f,
-            iters,
-            pca_freq,
-            pca_tol,
-            rng,
-            lo_bounds,
-            up_bounds,
-            best_f,
-            best_x,
-            last_best_f,
-            no_change_count,
-            tolerance,
+            iters=iters,
+            pca_freq=pca_freq,
+            pca_tol=pca_tol,
+            rng=rng,
+            lo_bounds=lo_bounds,
+            up_bounds=up_bounds,
+            best_f=best_f,
+            best_x=best_x,
+            last_best_f=last_best_f,
+            no_change_count=no_change_count,
+            tolerance=tolerance,
         )
 
         last_best_f = best_f
