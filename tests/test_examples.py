@@ -20,4 +20,4 @@ def test_notebook(name, monkeypatch):
         if cell["cell_type"] != "code" or "docs-only" in cell["metadata"].get("tags", []):
             continue
         code = compile("".join(cell["source"]), f"{name} cell {i}", "exec")
-        exec(code, namespace)  # noqa: S102
+        exec(code, namespace)

@@ -1,15 +1,17 @@
 [build-system]
 build-backend = "hatchling.build"
-
-requires = [ "hatch-vcs", "hatchling" ]
+requires = [
+  "hatch-vcs",
+  "hatchling",
+]
 
 [project]
 name = "sceua"
-description = "Shuffle Complex Evolution algorithm for Optimization"
+description = "Shuffled Complex Evolution (SCE-UA) global optimization for model calibration."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [ { name = "Taher Chegini", email = "cheginit@gmail.com" } ]
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
@@ -17,221 +19,170 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering",
-  "Topic :: Scientific/Engineering :: GIS",
+  "Topic :: Scientific/Engineering :: Hydrology",
   "Typing :: Typed",
 ]
-dynamic = [ "version" ]
-dependencies = [ "numpy>=2", "scipy>=1.15" ]
-optional-dependencies.benchmark = [
-  "landscapes",
-  "numba",
-  "pandas",
-  "pytest-codspeed",
+dynamic = [
+  "version",
 ]
-optional-dependencies.dev = [
+dependencies = [
+  "numpy>=2",
+  "scipy>=1.15",
+]
+urls.Changelog = "https://github.com/cheginit/sceua/releases"
+urls.CI = "https://github.com/cheginit/sceua/actions"
+urls.Homepage = "https://github.com/cheginit/sceua"
+urls.Issues = "https://github.com/cheginit/sceua/issues"
+
+[dependency-groups]
+dev = [
+  # The calibration example fetches and plots its data with these.
   "folium",
   "geopandas>=1",
+  "git-cliff",
   "hydrosignatures>=0.19.3",
   "ipykernel",
   "ipywidgets",
-  "landscapes",
+  "jupytext",
   "mapclassify",
   "matplotlib",
+  "nbconvert",
   "netcdf4",
-  "numba",
-  "pandas>=2",
-  "pytest",
   "rioxarray",
   "xarray",
+  { include-group = "test" },
+  { include-group = "typecheck" },
 ]
-optional-dependencies.docs = [
-  "black",
-  "mkdocs",
-  "mkdocs-jupyter",
-  "mkdocs-material",
-  "mkdocstrings-python",
-]
-optional-dependencies.lint = [ "codespell", "pre-commit" ]
-optional-dependencies.test = [
-  "coverage[toml]>=7.7",
+test = [
+  "coverage[toml]",
   "landscapes",
+  # The HYMOD model in conftest.py and the example notebooks is compiled with numba.
   "numba",
-  "numpy",
   "pandas",
+  "pytest",
   "pytest-cov",
   "pytest-sugar",
 ]
-optional-dependencies.typecheck = [ "pyright" ]
-urls.Changelog = "https://sceua.readthedocs.io/en/latest/CHANGELOG"
-urls.CI = "https://github.com/cheginit/sceua/actions"
-urls.Homepage = "https://sceua.readthedocs.io"
-urls.Issues = "https://github.com/cheginit/sceua/issues"
+benchmark = [
+  "landscapes",
+  "numba",
+  "pandas",
+  "pytest",
+  "pytest-codspeed",
+]
+lint = [
+  "codespell",
+  "pre-commit",
+  "pysentry-rs",
+  # pysentry resolves transitive dependencies through uv; without it, it audits only the
+  # direct dependencies' lower bounds.
+  "uv",
+]
+typecheck = [
+  "pyright",
+]
 
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.targets.wheel]
-packages = [ "src/sceua" ]
+[tool.hatch]
+version.source = "vcs"
+build.targets.wheel.packages = [
+  "src/sceua",
+]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py313"
 line-length = 100
-
 exclude = [ ".pixi", "__pycache__" ]
-
-lint.select = [
-  # flake8-bugbear
-  "B",
-  # flake8-comprehensions
-  "C4",
-  # pydocstyle
-  "D",
-  # Error
-  "E",
-  # pyflakes
-  "F",
-  # isort
-  "I",
-  # flake8-gettext
-  "INT",
-  # flake8-implicit-str-concat
-  "ISC",
-  # pep8-naming
-  "N",
-  # compatibility with numpy 2.0
-  "NPY201",
-  # Perflint
-  "PERF",
-  # pygrep-hooks
-  "PGH",
-  # misc lints
-  "PIE",
-  # pylint
-  "PLC",
-  "PLE",
-  "PLR",
-  "PLW",
-  # flake8-pytest-style
-  "PT",
-  # flake8-use-pathlib
-  "PTH",
-  # flake8-pyi
-  "PYI",
-  # flake8-quotes
-  "Q",
-  # Ruff-specific rules
-  "RUF",
-  # bandit
-  "S",
-  # flake8-simplify
-  "SIM",
-  # flake8-debugger
-  "T10",
-  # flake8-print
-  "T20",
-  # type-checking imports
-  "TC",
-  # tidy imports
-  "TID",
-  # tryceratops
-  "TRY",
-  # pyupgrade
-  "UP",
-  # Warning
-  "W",
-  # flake8-2020
-  "YTT",
-]
-
+lint.select = [ "ALL" ]
 lint.ignore = [
-  "D103",
-  "D105",
-  "E501",
-  # conflict with ruff-formatter
-  "ISC001",
-  "PLR0913",
-  "PLR2004",
-  # url schema
-  "S310",
-  "S603",
-  # shell command
-  "S605",
-  "S607",
-  # custom exception
+  "ANN",     # pyright is better at this
+  "B905",    # zip without strict is fine in Python 3.12+
+  "COM",     # ruff format takes care of our commas
+  "CPY001",  # no need for copyright header
+  "D",       # we prefer our own docstring style
+  "E501",    # leave line-length enforcement to ruff format
+  "FBT",     # we don't hate bool args around here
+  "FIX",     # yes, we want XXX as a marker
+  "ISC001",  # conflicts with ruff format
+  "N",       # we need more naming freedom
+  "PLC0415", # sometimes, imports have to live elsewhere
+  "PLR0913", # yes, many arguments, but most have defaults
+  "PLR2004", # numbers are sometimes fine
+  "TC001",   # first-party typing-only imports are cheap, keep simple for docs
+  "TC003",   # stdlib typing-only imports are cheap, keep simple for docs
+  "TRY301",  # raising within try/except is fine for us
+]
+lint.per-file-ignores.".agents/skills/*/*.py" = [ "INP001" ]
+# The HYMOD model in conftest.py mirrors the example notebooks' code.
+lint.per-file-ignores."conftest.py" = [
+  "EM",
+  "INP001",
+  "PLR0917",
+  "RET504",
   "TRY003",
 ]
-
-lint.per-file-ignores."sceua/sceua.py" = [
-  # specific type error ignored
-  "PGH003",
+lint.per-file-ignores."docs/examples/*.{ipynb,py}" = [
+  "B018",    # a bare expression displays a value in a notebook
+  "E402",    # imports sit in the cell that first needs them
+  "EM101",   # tutorial code raises with the message inline
+  "EM102",   # tutorial code raises with the message inline
+  "ERA001",  # jupytext headers look like commented-out code
+  "I002",    # no __future__ import in example notebooks
+  "INP001",  # docs/examples is not a package
+  "PLR0917", # numba-compiled functions take positional arguments only
+  "RET504",  # a named result reads better in a tutorial
+  "S101",    # an example's assertions are its checks, run by tests/test_examples.py
+  "S310",    # the calibration example downloads from fixed https URLs
+  "T201",    # printing is how notebooks show results
+  "TRY003",  # tutorial code raises with the message inline
 ]
+lint.per-file-ignores."scripts/*.py" = [ "INP001" ]
 lint.per-file-ignores."tests/*.py" = [
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "D105",
-  "D106",
-  "D107",
-  # specific type error ignored
-  "PGH003",
-  # use of "assert"
-  "S101",
+  "B015",
+  "B017",
+  "B018",
+  "BLE001",
+  "DTZ",
+  "EM",
+  "INP001",
+  "PLR0124",
+  "PT011",
+  "PT012",
+  "RUF012",
+  "S",
+  "SIM201",
+  "SIM202",
+  "SIM300",
+  # tests intentionally inspect private state
+  "SLF001",
+  "TRY",
 ]
 lint.extend-safe-fixes = [
-  # module level imports
   "E402",
-  # break down assert
   "PT018",
-  # Move imports
-  "TC",
-  # absolute imports
   "TID252",
 ]
 lint.isort.known-first-party = [ "sceua" ]
 lint.isort.required-imports = [ "from __future__ import annotations" ]
 
-lint.pydocstyle.convention = "numpy"
-
 [tool.codespell]
-skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.pixi,pixi.lock,**.ipynb"
+# "gages" is the USGS spelling for stream gages, so don't second-guess it as "gauges".
 ignore-words-list = "gage,gages"
+# Notebook outputs hold base64 images that trip codespell.
+skip = "__pycache__,_build,.mypy_cache,.git,./htmlcov,.pixi,pixi.lock,*.ipynb"
 
-[tool.pytest.ini_options]
-doctest_optionflags = 'NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER'
-testpaths = [ "tests" ]
-markers = [ "benchmark: Tests that are benchmarks" ]
-
-[tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:", "if sys.platform" ]
-ignore_errors = true
-omit = [ "**/__init__.py", ".pixi/*" ]
-include = [ "src/*" ]
-
-[tool.coverage.paths]
-source = [ "src", "*/site-packages" ]
-
-[tool.coverage.run]
-branch = true
-source_pkgs = [ "sceua" ]
-
-[tool.pyrefly]
-python-interpreter = ".pixi/envs/dev/bin/python3"
-project-includes = [ "src" ]
-project-excludes = [ "**/.[!/.]*", "**/tests" ]
-search-path = [ "src" ]
-site-package-path = [ ".pixi/envs/dev/lib/python3.13/site-packages" ]
+[tool.pyproject-fmt]
+expand_tables = [ "tool.git-cliff", "tool.pixi" ]
 
 [tool.pyright]
-exclude = [ "**/__pycache__", "**/__init__.py" ]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
 include = [ "src" ]
+ignore = [
+  "tests/*.py",
+]
 reportMissingTypeStubs = false
 reportUnknownArgumentType = false
 reportUnknownLambdaType = false
@@ -242,44 +193,12 @@ reportUnnecessaryIsInstance = false
 reportUntypedFunctionDecorator = false
 reportAttributeAccessIssue = false
 reportInvalidTypeForm = false
-typeCheckingMode = "strict"
 
-[tool.pixi.workspace]
-channels = [ "conda-forge" ]
-platforms = [ "linux-64", "osx-64", "osx-arm64", "win-64" ]
-
-[tool.pixi.pypi-dependencies]
-sceua = { path = ".", editable = true }
-
-[tool.pixi.feature.py310.dependencies]
-hdf5 = "*"
-libnetcdf = "*"
-proj = "*"
-libgdal-core = "*"
-python = "~=3.10.0"
-uv = "*"
-tomli = "*"
-
-[tool.pixi.feature.py314.dependencies]
-hdf5 = "*"
-libnetcdf = "*"
-proj = "*"
-libgdal-core = "*"
-python = "~=3.14.0"
-uv = "*"
-
-[tool.pixi.environments]
-test310 = { features = [ "test", "py310" ] }
-test314 = { features = [ "test", "py314" ] }
-dev = { features = [ "dev", "test", "py314" ] }
-benchmark = { features = [ "benchmark", "py314" ] }
-typecheck = { features = [ "typecheck", "py314" ] }
-docs = { features = [ "docs", "dev", "test", "py314" ] }
-lint = { features = [ "lint", "py314" ], no-default-feature = true }
-
-[tool.pixi.feature.test.tasks]
-test = { cmd = [
-  "pytest",
+[tool.pytest]
+ini_options.testpaths = [
+  "tests",
+]
+ini_options.addopts = [
   "--import-mode=importlib",
   "-v",
   "--cov",
@@ -288,21 +207,155 @@ test = { cmd = [
   "--cov-report=xml",
   "--junitxml=junit.xml",
   "--durations=5",
-] }
-report = { cmd = [ "coverage", "report" ], depends-on = [ "test" ] }
-html = { cmd = [ "coverage", "html" ], depends-on = [ "report" ] }
+  "--basetemp=.pytest_tmp",
+]
+ini_options.markers = [
+  "benchmark: tests that CodSpeed times",
+]
+
+[tool.coverage]
+run.branch = true
+run.parallel = true
+run.source_pkgs = [
+  "sceua",
+]
+paths.source = [ "src", "*/site-packages" ]
+report.exclude_lines = [
+  "if sys.platform",
+  "if TYPE_CHECKING:",
+  # Listing exclude_lines drops coverage's default pragma, so restate it.
+  "pragma: no cover",
+]
+report.ignore_errors = true
+report.omit = [
+  "**/__init__.py",
+]
+
+[tool.pixi.environments]
+dev = { features = [ "dev", "py315" ] }
+test313 = { features = [ "test", "py313" ] }
+test315 = { features = [ "test", "py315" ] }
+typecheck = { features = [ "typecheck", "py315" ] }
+benchmark = { features = [ "benchmark", "py315" ] }
+# The audit resolves for this Python, so lint stays on the floor, where backports install.
+lint = { features = [ "lint", "py313" ], no-default-feature = true }
 
 [tool.pixi.feature.benchmark.tasks]
 benchmark = "pytest tests --codspeed"
 
+[tool.pixi.feature.dev.tasks]
+changelog = "git cliff -c pyproject.toml --unreleased"
+changelog-update = "git cliff -c pyproject.toml -o CHANGELOG.md"
+
 [tool.pixi.feature.lint.tasks]
-lint = "pre-commit run --all-files"
+lint = "pre-commit run --all-files && python scripts/lint_untracked.py"
+# Resolves the runtime dependencies from PyPI, as a new install would, and checks them.
+audit = "pysentry-rs . --fail-on low --requirements-files scripts/audit-requirements.txt"
 pcupdate = "pre-commit autoupdate"
 spell = "codespell -w"
+
+[tool.pixi.feature.py313.dependencies]
+python = "~=3.13.0"
+
+[tool.pixi.feature.py315.dependencies]
+python = "~=3.15.0"
+
+[tool.pixi.feature.test.tasks]
+test = "pytest"
+report = { cmd = [ "coverage", "report" ], depends-on = [ "test" ] }
+html = { cmd = [ "coverage", "html" ], depends-on = [ "report" ] }
 
 [tool.pixi.feature.typecheck.tasks]
 typecheck = "pyright"
 
-[tool.pixi.feature.docs.tasks]
-build-docs = "mkdocs build --strict"
-docs = { cmd = [ "mkdocs", "serve" ], depends-on = [ "build-docs" ] }
+[tool.pixi.pypi-dependencies]
+sceua = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+# Tags only a commit already on origin/main. An optional notes file becomes the tag message.
+release = { cmd = "git fetch origin main && git merge-base --is-ancestor HEAD origin/main && git tag -a {{ version }} {% if notes %}-F {{ notes }}{% else %}-m {{ version }}{% endif %} && git push origin refs/tags/{{ version }}", args = [
+  { arg = "version" },
+  { arg = "notes", default = "" },
+] }
+
+[tool.pixi.workspace]
+channels = [ "conda-forge" ]
+# rasterio, under rioxarray, ships osx-arm64 wheels for macOS 15.0 and later only, and pixi
+# builds its sdist, which needs GDAL, below that.
+platforms = [
+  "linux-64",
+  { platform = "osx-arm64", macos = "15.0" },
+  "win-64",
+]
+
+[tool.vulture]
+paths = [ "src", "tests" ]
+ignore_names = [
+  "setUp",
+  "tearDown",
+  # pytest naming conventions.
+  "test_*",
+]
+ignore_decorators = [
+  # Properties may be invoked dynamically (getattr / dataclass).
+  "@property",
+  # pytest fixtures and parametrize args look unused but are wired up
+  # by pytest at collection time.
+  "@pytest.fixture",
+  "@pytest.mark.*",
+]
+# Dead-code detection. Pre-commit runs `vulture --quiet` and reads this
+# config; raise the bar to >=80% confidence so it stays signal, not noise.
+min_confidence = 80
+
+[tool.git-cliff]
+[tool.git-cliff.changelog]
+header = """
+# Changelog
+"""
+# The tag message is the release summary; tags whose message only repeats the version skip it.
+body = """{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+## [Unreleased]
+{% endif -%}
+{% if message and message | trim != version %}
+{{ message | trim }}
+{% endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{%- for commit in commits %}
+- {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | split(pat="\n") | first | upper_first | trim }}{% if commit.breaking %} (**breaking**){% endif %}{% if commit.remote.pr_number %} in [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}){% else %} ([{{ commit.id | truncate(length=7, end="") }}]({{ self::remote_url() }}/commit/{{ commit.id }})){% endif %}
+{%- endfor %}
+{% endfor %}
+"""
+trim = true
+
+[tool.git-cliff.git]
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  { message = "^feat", group = "Added" },
+  { message = "^fix", group = "Fixed" },
+  { message = "^perf", group = "Changed" },
+  { message = "^refactor", group = "Changed" },
+  { message = "^revert", group = "Fixed" },
+  { message = "^style", group = "Changed" },
+  { message = "^docs", skip = true },
+  { message = "^test", skip = true },
+  { message = "^chore", skip = true },
+  { message = "^ci", skip = true },
+  { message = "^build", skip = true },
+  { message = "^Merge", skip = true },
+]
+protect_breaking_commits = true
+# Only final versions count, so a final's notes start at the previous final, past any rc.
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+sort_commits = "newest"
+
+[tool.git-cliff.remote]
+github.owner = "cheginit"
+github.repo = "sceua"
