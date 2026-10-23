@@ -22,6 +22,11 @@ def test_x0():
     assert abs(result.fun - expected) < 1e-2
 
 
+def test_one_dimensional():
+    result = sceua.minimize(lambda x: float((x[0] - 0.3) ** 2), [(-1, 1)], seed=42)
+    assert result.fun < 1e-6
+
+
 def test_model(hymod):
     result = sceua.minimize(hymod.fit, hymod.bounds, seed=42, n_complexes=3 * len(hymod.bounds))
     assert result.success

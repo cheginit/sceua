@@ -240,7 +240,8 @@ def _update_population(
     pop_x, pop_f = pop_x[idx], pop_f[idx]
 
     # Check effective dimensionality from https://doi.org/10.1029/2010WR009224
-    if iters % pca_freq == 0:
+    # A single parameter has no direction to lose.
+    if pop_x.shape[1] > 1 and iters % pca_freq == 0:
         cov = np.cov(pop_x, rowvar=False)
         eigenvalues = np.linalg.eigvalsh(cov)
         ratios = eigenvalues / eigenvalues.max()
