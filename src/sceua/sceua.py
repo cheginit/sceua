@@ -90,7 +90,8 @@ def _generate_population(
     if x0 is None:
         x0 = np.empty((0, n_dim))
     else:
-        x0 = np.atleast_2d(x0)
+        # Float dtype, else offspring written into an integer population get truncated.
+        x0 = np.atleast_2d(np.asarray(x0, dtype=np.float64))
         if x0.shape[1] != n_dim:
             raise ValueError(f"x0 must have shape (n, {n_dim})")
 

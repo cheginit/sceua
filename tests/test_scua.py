@@ -1,6 +1,7 @@
 # pyright: reportMissingParameterType=false
 from __future__ import annotations
 
+import numpy as np
 import pytest
 from landscapes import single_objective
 
@@ -20,6 +21,17 @@ def test_x0():
         max_workers=2,
     )
     assert abs(result.fun - expected) < 1e-2
+
+
+def test_integer_x0():
+    def func(x):
+        return float(np.sum((x - 2.4) ** 2))
+
+    x0 = np.random.default_rng(6).integers(0, 10, (6, 2))
+    result = sceua.minimize(
+        func, [(0, 10)] * 2, x0=x0, n_complexes=2, n_points_complex=3, pca_tol=0, max_iter=1, seed=0
+    )
+    assert func(result.x) == pytest.approx(result.fun)
 
 
 def test_one_dimensional():
