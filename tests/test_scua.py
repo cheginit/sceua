@@ -56,6 +56,13 @@ def test_one_dimensional():
     assert result.fun < 1e-3
 
 
+def test_hymod_without_rain_makes_no_runoff(hymod):
+    hymod.prcp[:] = 0
+    hymod.pet[:] = 0
+    x = np.array([lo + 0.5 * (up - lo) for lo, up in hymod.bounds])
+    assert np.all(hymod(x) == 0)
+
+
 def test_model(hymod):
     result = sceua.minimize(hymod.fit, hymod.bounds, seed=42, n_complexes=3 * len(hymod.bounds))
     assert result.success
