@@ -180,26 +180,43 @@ def _evolve_complexes(
 
 
 def _pca_recovery(
+    func: FuncType,
+    args: tuple[Any, ...],
     population: FloatArray,
+    func_values: FloatArray,
     lo_bounds: FloatArray,
     up_bounds: FloatArray,
     tol: float,
     rng: np.random.Generator,
-) -> None:
+) -> bool:
     """Recover lost dimensions in the population from https://doi.org/10.1029/2010WR009224.
 
     Parameters
     ----------
+    func : callable
+        Objective function, used to evaluate the moved points.
+    args : tuple
+        Extra arguments passed to ``func``.
     population : numpy.ndarray
-        Current population of parameter vectors.
+        Current population of parameter vectors, sorted best first. Modified in place;
+        the best point is never moved.
+    func_values : numpy.ndarray
+        Objective values of ``population``, updated in place for the moved points.
     lo_bounds, up_bounds : numpy.ndarray
         Lower and upper bounds.
-    tol : float, optional
+    tol : float
         Tolerance factor to decide if a dimension is lost, by comparing
         each eigenvalue to ``tol * max(eigenvalue)``.
+    rng : numpy.random.Generator
+        Random number generator.
+
+    Returns
+    -------
+    bool
+        Whether any point was moved.
     """
     if population.shape[0] < 2:
-        return
+        return False
 
     mean_vec = np.mean(population, axis=0)
     x_centered = population - mean_vec
@@ -213,17 +230,21 @@ def _pca_recovery(
             direction = eigenvectors[:, i]
             n_indiv = population.shape[0]
             n_to_perturb = max(1, int(0.1 * n_indiv))  # perturb 10% of individuals
-            indices = rng.choice(n_indiv, n_to_perturb, replace=False)
+            indices = 1 + rng.choice(n_indiv - 1, n_to_perturb, replace=False)
             factor = 0.05 * (up_bounds - lo_bounds).mean()  # scale factor
             for idx in indices:
                 scalar = rng.random() * factor
                 population[idx] = np.clip(
                     population[idx] + scalar * direction, lo_bounds, up_bounds
                 )
-            break
+                func_values[idx] = func(population[idx], *args)
+            return True
+    return False
 
 
 def _update_population(
+    func: FuncType,
+    args: tuple[Any, ...],
     pop_x: FloatArray,
     pop_f: FloatArray,
     iters: int,
@@ -249,8 +270,11 @@ def _update_population(
         eigenvalues = np.linalg.eigvalsh(cov)
         ratios = eigenvalues / eigenvalues.max()
         lost_dims = np.sum(ratios < pca_tol)
-        if lost_dims > 0:
-            _pca_recovery(pop_x, lo_bounds, up_bounds, pca_tol, rng)
+        if lost_dims > 0 and _pca_recovery(
+            func, args, pop_x, pop_f, lo_bounds, up_bounds, pca_tol, rng
+        ):
+            idx = np.argsort(pop_f)
+            pop_x, pop_f = pop_x[idx], pop_f[idx]
 
     if pop_f[0] < best_f:
         best_x = pop_x[0].copy()
@@ -407,6 +431,8 @@ def minimize(  # noqa: PLR0915
             for idx in complex_idx
         ]
         pop_x, pop_f, best_x, best_f, no_change_count = _update_population(
+            objective,
+            args,
             pop_x,
             pop_f,
             iters,
