@@ -39,7 +39,7 @@ def _excess(
     dummy = np.minimum((ct_prev + s_1) / c_max, 1)
     xn = c_max / (b_exp + 1) * (1 - np.power(np.abs(1 - dummy), b_exp + 1))
 
-    er_2 = np.maximum(s_1 - (xn - x_loss), 0.2)
+    er_2 = np.maximum(s_1 - (xn - x_loss), 0)
 
     evap = (1 - (((c_max / (b_exp + 1)) - xn) / (c_max / (b_exp + 1)))) * pet_t
     xn = np.maximum(xn - evap, 0)
