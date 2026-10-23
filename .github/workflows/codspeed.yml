@@ -2,29 +2,32 @@ name: CodSpeed
 
 on:
   push:
-    branches:
-    - main
+    branches: [main]
   pull_request:
-  # `workflow_dispatch` allows CodSpeed to trigger backtest
-  # performance analysis in order to generate initial data.
+  # Lets CodSpeed trigger a backtest to build its baseline.
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   benchmarks:
     name: Run benchmarks
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: prefix-dev/setup-pixi@v0.9.3
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
-        pixi-version: v0.62.2
+        fetch-depth: 0  # hatch-vcs reads tags for the version
+    - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94  # v0.11.2
+      with:
+        pixi-version: v0.82.1  # Dependabot does not bump this
         environments: benchmark
-        activate-environment: benchmark
-        cache: true
-        cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-    - name: Run benchmarks
-      uses: CodSpeedHQ/action@v4
+    - uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062  # v5.6.0
       with:
         mode: simulation
         token: ${{ secrets.CODSPEED_TOKEN }}
-        run: pixi r benchmark
+        run: pixi run benchmark
