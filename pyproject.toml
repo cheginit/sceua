@@ -119,7 +119,8 @@ release = { cmd = "git fetch origin main && git merge-base --is-ancestor HEAD or
 ] }
 
 [tool.pixi.feature.benchmark.tasks]
-benchmark = "pytest tests --codspeed"
+# The shared addopts carry coverage options, and the benchmark environment has no pytest-cov.
+benchmark = "pytest tests --codspeed -o 'addopts=--import-mode=importlib'"
 
 [tool.pixi.feature.dev.tasks]
 changelog = "git cliff -c pyproject.toml --unreleased"
