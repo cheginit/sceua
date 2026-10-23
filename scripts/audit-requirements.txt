@@ -1,0 +1,2 @@
+# What `pixi r audit` resolves and checks: the package with every extra in the brackets.
+sceua @ file://${PIXI_PROJECT_ROOT}

@@ -119,3 +119,6 @@ WBT
 .nox
 .markdownlint.json
 .codspeed
+
+# pytest --basetemp
+.pytest_tmp/
