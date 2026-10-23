@@ -394,11 +394,14 @@ def minimize(  # noqa: PLR0915
     rng = np.random.default_rng(seed)
     n_pop = n_points_complex * n_complexes
     pop_x = _generate_population(lo_bounds, up_bounds, n_pop, x0, rng)
+    # Float dtype, else integer initial values would truncate later scores.
     if max_workers > 1:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            pop_f = np.asarray(list(executor.map(lambda x: objective(x, *args), pop_x)))
+            pop_f = np.asarray(
+                list(executor.map(lambda x: objective(x, *args), pop_x)), dtype=np.float64
+            )
     else:
-        pop_f = np.asarray([objective(x, *args) for x in pop_x])
+        pop_f = np.asarray([objective(x, *args) for x in pop_x], dtype=np.float64)
 
     idx = np.argsort(pop_f)
     pop_x, pop_f = pop_x[idx], pop_f[idx]

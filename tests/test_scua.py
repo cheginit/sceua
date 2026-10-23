@@ -75,6 +75,17 @@ def test_integer_x0():
     assert func(result.x) == pytest.approx(result.fun)
 
 
+def test_integer_objective_values():
+    def func(x):
+        return 1 if x[0] == x[1] else float(x @ x)
+
+    t = np.linspace(0.2, 0.8, 6)
+    result = sceua.minimize(
+        func, [(0, 1)] * 2, x0=np.c_[t, t], n_complexes=2, n_points_complex=3, max_iter=2, seed=1
+    )
+    assert func(result.x) == pytest.approx(result.fun)
+
+
 def test_x0_out_of_bounds():
     with pytest.raises(ValueError, match="x0"):
         sceua.minimize(lambda x: float(x @ x), [(1, 2)] * 2, x0=[(0, 0)])
