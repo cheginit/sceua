@@ -267,6 +267,16 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
 - **Check:** `test_finite_candidate_replaces_nan_worst` and
     `test_nan_worst_keeps_finite_values`.
 
+### L-08: A single run's NSE differed by platform
+
+- **What happened:** The reliability example asserted that seed 0's run with a NaN
+    region reached the NSE of seed 0's plain run. HYMOD computes in float32, and on
+    Windows the small arithmetic differences sent the same seed down another path, which
+    stalled at NSE 0.504 after 365 evaluations (Q-03).
+- **Rule:** Assertions on search results either state a guarantee that holds on every
+    run (D-02, D-06, D-08) or compare the best of several seeds.
+- **Check:** None automatic, since CI runs the tests on Ubuntu only.
+
 ## Open questions
 
 ### Q-01: Canonical complex evolution
@@ -299,6 +309,10 @@ adaptive `θ` (Liu et al., 2024), which needs a guard for objectives near zero.
 of parameter ranges. A 2-D quadratic on `[0, 1e-12]²` stops after one iteration. Duan's
 reference code uses the percent change over the last few shuffles and a range normalized
 by the bounds.
+
+The rule also ends runs before the search has moved. On HYMOD with default settings, 3
+of 20 seeds stop after 355 to 513 evaluations at NSE 0.49 to 0.51, while the other 17
+reach 0.5314 or better (L-08).
 
 ### Q-04: Parallel evolution
 
