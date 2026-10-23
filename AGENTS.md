@@ -120,6 +120,11 @@ before and after on fixed problems and seeds, with the prediction written down f
 - Each notebook gets a card in `docs/examples/index.md` with a thumbnail in
     `docs/examples/images/`, following the existing card. The strict build fails if a
     card links to a notebook that does not exist.
+- `pixi r nb-sync` and `pixi r nb-pair` copy whichever of a notebook and its script has
+    the newer modification time over the other. A checkout or rebase resets those times,
+    so an edit can be overwritten by the stale side. Regenerate the stale side
+    explicitly, for example
+    `pixi r -e dev jupytext --to py:percent docs/examples/<name>.ipynb`.
 - Skills live in `.agents/skills/`. `.claude/skills` is a symlink to it for Claude Code,
     which does not read `.agents/`.
 - A ruleset on `main` names its required checks by job: `Test (test313)`,
