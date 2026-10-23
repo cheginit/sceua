@@ -112,7 +112,7 @@ nav:
 - Getting Started: README.md
 - Examples:
   - Overview: examples/index.md
-  - Spline Interpolation: examples/calibration.ipynb
+  - Calibration: examples/calibration.ipynb
   - Reliable Calibration: examples/reliability.ipynb
 - API Reference: reference.md
 - Release Notes: CHANGELOG.md
