@@ -107,6 +107,11 @@ def _generate_population(
     return np.vstack([x0, x_samples]) if len(x0) > 0 else x_samples
 
 
+def _improves(value: float, current: float) -> bool:
+    """Whether ``value`` beats ``current``, with NaN worse than any number."""
+    return bool(value < current or (np.isnan(current) and not np.isnan(value)))
+
+
 def _evolve_complexes(
     func: FuncType,
     args: tuple[Any, ...],
@@ -152,7 +157,7 @@ def _evolve_complexes(
     reflection_value = func(reflection, *args)
 
     # If reflection is better than worst, replace worst point
-    if reflection_value < complex_values[worst_idx]:
+    if _improves(reflection_value, complex_values[worst_idx]):
         complex_population[worst_idx] = reflection
         complex_values[worst_idx] = reflection_value
     else:
@@ -165,7 +170,7 @@ def _evolve_complexes(
         contraction_value = func(contraction, *args)
 
         # If contraction is better than worst, replace worst point
-        if contraction_value < complex_values[worst_idx]:
+        if _improves(contraction_value, complex_values[worst_idx]):
             complex_population[worst_idx] = contraction
             complex_values[worst_idx] = contraction_value
         else:
@@ -273,13 +278,10 @@ def _update_population(
         idx = np.argsort(pop_f)
         pop_x, pop_f = pop_x[idx], pop_f[idx]
 
-    # NaN sorts last, so a NaN best means every evaluation so far was NaN.
-    if pop_f[0] < best_f or np.isnan(best_f):
+    if _improves(pop_f[0], best_f):
         best_x = pop_x[0].copy()
         best_f = pop_f[0]
-        improved = not np.isnan(best_f) and (
-            np.isnan(last_best_f) or last_best_f - best_f > tolerance
-        )
+        improved = np.isnan(last_best_f) or last_best_f - best_f > tolerance
         no_change_count = 0 if improved else no_change_count + 1
     else:
         no_change_count += 1

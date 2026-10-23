@@ -6,7 +6,7 @@ import pytest
 from landscapes import single_objective
 
 import sceua
-from sceua.sceua import _pca_recovery
+from sceua.sceua import _evolve_complexes, _pca_recovery
 
 MIXED_SCALE = np.array([1e3, 1, 1e-2, 1, 1])
 
@@ -115,6 +115,36 @@ def test_finite_value_replaces_nan_best():
     )
     assert result.success
     assert func(result.x) == pytest.approx(result.fun)
+    assert result.fun == np.nanmin(result.funv)
+
+
+@pytest.mark.parametrize(
+    ("func", "kept"),
+    [
+        (lambda x: x[0] if x[0] < 0.3 else np.nan, 0.18),
+        (lambda x: x[0] if 0.6 < x[0] < 0.7 else np.nan, 0.66),
+    ],
+    ids=["reflection", "contraction"],
+)
+def test_finite_candidate_replaces_nan_worst(func, kept):
+    population = np.array([[0.5], [0.9]])
+    values = np.array([np.nan, np.nan])
+    rng = np.random.default_rng(0)
+    _evolve_complexes(
+        func, (), population, values, np.arange(2), np.zeros(1), np.ones(1), rng, 1.0, 0.5
+    )
+    assert values[0] == pytest.approx(kept)
+
+
+def test_nan_worst_keeps_finite_values():
+    def func(x):
+        return x[0] if 0.67 < x[0] < 0.69 else np.nan
+
+    x0 = [[0.8], [0.9], [0.95], [0.99]]
+    result = sceua.minimize(
+        func, [(0, 1)], x0=x0, n_complexes=2, n_points_complex=2, max_iter=1, seed=0
+    )
+    assert result.success
     assert result.fun == np.nanmin(result.funv)
 
 
