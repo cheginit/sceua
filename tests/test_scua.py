@@ -131,7 +131,16 @@ def test_finite_candidate_replaces_nan_worst(func, kept):
     values = np.array([np.nan, np.nan])
     rng = np.random.default_rng(0)
     _evolve_complexes(
-        func, (), population, values, np.arange(2), np.zeros(1), np.ones(1), rng, 1.0, 0.5
+        func,
+        (),
+        population,
+        values,
+        np.arange(2),
+        lo_bounds=np.zeros(1),
+        up_bounds=np.ones(1),
+        rng=rng,
+        alpha=1.0,
+        beta=0.5,
     )
     assert values[0] == pytest.approx(kept)
 
@@ -203,7 +212,9 @@ def test_pca_recovery_evaluates_moved_points():
     population = np.c_[t, 0.5 * t]  # collinear, so one direction is lost
     values = np.array([func(x) for x in population])
     best = population[0].copy()
-    moved = _pca_recovery(func, (), population, values, np.zeros(2), np.ones(2), 1e-3, rng)
+    moved = _pca_recovery(
+        func, (), population, values, lo_bounds=np.zeros(2), up_bounds=np.ones(2), tol=1e-3, rng=rng
+    )
     assert moved
     assert np.array_equal(population[0], best)
     assert np.allclose(values, [func(x) for x in population])
@@ -215,7 +226,9 @@ def test_pca_recovery_ignores_parameter_units():
     rng = np.random.default_rng(0)
     population = lo + rng.random((100, 5)) * (up - lo)  # spread evenly in every parameter
     values = np.zeros(100)
-    assert not _pca_recovery(lambda _: 0.0, (), population, values, lo, up, 1e-3, rng)
+    assert not _pca_recovery(
+        lambda _: 0.0, (), population, values, lo_bounds=lo, up_bounds=up, tol=1e-3, rng=rng
+    )
 
 
 def test_rosenbrock():
