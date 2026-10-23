@@ -1,20 +1,14 @@
 # Examples
 
-The example notebooks have several dependencies. You can install all the dependencies
-using `micromamba` (or `conda` or `mamba`):
-
-```bash
-micormamba create -n sceua sceua pandas ipykernel ipywidgets
-```
-
-This will create a new environment called `sceua` with all the required packages.
+Each card is a notebook from the repository's `docs/examples/` directory, rendered with
+its saved outputs.
 
 <div class="grid cards" markdown>
 
-- [![Calibration](images/convergence.png){ loading=lazy }](calibration.ipynb "Calibration")
+- [![Calibration](images/convergence.png){ loading=lazy }](calibration.md "Calibration")
     **Calibration**
 
-- [![Reliable Calibration](images/reliability.png){ loading=lazy }](reliability.ipynb "Reliable Calibration")
+- [![Reliable Calibration](images/reliability.png){ loading=lazy }](reliability.md "Reliable Calibration")
     **Reliable Calibration**
 
 </div>
