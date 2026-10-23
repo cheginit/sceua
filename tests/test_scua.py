@@ -86,6 +86,13 @@ def test_integer_objective_values():
     assert func(result.x) == pytest.approx(result.fun)
 
 
+def test_single_point_complexes_get_finite_points():
+    result = sceua.minimize(
+        lambda x: float(x @ x), [(0, 1)] * 2, n_complexes=2, n_points_complex=1, max_iter=2, seed=0
+    )
+    assert np.all(np.isfinite(result.xv))
+
+
 def test_x0_out_of_bounds():
     with pytest.raises(ValueError, match="x0"):
         sceua.minimize(lambda x: float(x @ x), [(1, 2)] * 2, x0=[(0, 0)])
