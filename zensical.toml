@@ -1,0 +1,55 @@
+[project]
+site_name = "SCE-UA"
+site_description = "Shuffled Complex Evolution (SCE-UA) global optimization for model calibration."
+site_url = "https://cheginit.github.io/sceua/"
+repo_url = "https://github.com/cheginit/sceua"
+repo_name = "cheginit/sceua"
+
+# No nav key: the nav mirrors docs/, so a new example notebook appears without an edit.
+
+[project.theme]
+logo = "assets/hyriver_logo.png"
+favicon = "assets/hyriver_logo.png"
+features = [
+  "content.code.copy",
+  "navigation.footer",
+  # docs/examples/index.md is the Examples section page, not a child of it.
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.top",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+md_in_html = {}
+toc.permalink = true
+pymdownx.highlight.anchor_linenums = true
+pymdownx.inlinehilite = {}
+# docs/index.md includes README.md; paths resolve from the repo root.
+pymdownx.snippets.base_path = ["."]
+pymdownx.snippets.check_paths = true
+pymdownx.superfences = {}
+pymdownx.tasklist.custom_checkbox = true
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "numpy"
+members_order = "source"
+show_source = false

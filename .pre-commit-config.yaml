@@ -34,6 +34,8 @@ repos:
   hooks:
   - id: ssort
     name: Sort top level statements with ssort
+    # Reordering a jupytext script can move code across notebook cells.
+    exclude: ^docs/examples/
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.17.1

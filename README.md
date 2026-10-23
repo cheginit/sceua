@@ -17,7 +17,8 @@ SCE-UA is a lightweight Python package implementing the Shuffled Complex Evoluti
 calibration, it leverages NumPy and SciPy for efficient computation and seamless
 integration into Python workflows.
 
-Full documentation is available at [sceua.readthedocs.io](https://sceua.readthedocs.io).
+Full documentation is available at
+[cheginit.github.io/sceua](https://cheginit.github.io/sceua/).
 
 ## 🌟 Features
 
@@ -79,8 +80,7 @@ problems with highly correlated parameters and/or high dimensionality. Default v
 are set to reasonable standards, but you can adjust them as needed for your specific
 problem.
 
-For more details, refer to the
-[API reference](https://sceua.readthedocs.io/en/latest/reference/).
+For more details, refer to the [API reference](https://cheginit.github.io/sceua/api/).
 
 ### Example Usage
 
@@ -167,7 +167,7 @@ ax2.plot(np.cumsum(results.funv - true_min), color="r")
 
 ![Convergence](https://raw.githubusercontent.com/cheginit/sceua/main/docs/examples/images/convergence.png)
 
-Check the [docs](https://sceua.readthedocs.io) for more examples and API details.
+Check the [docs](https://cheginit.github.io/sceua/) for more examples and API details.
 
 ## 📚 References
 
@@ -199,8 +199,8 @@ Additionally, some ideas were inspired by [UQPyL](https://github.com/smasky/UQPy
 ## 🤝 Contributing
 
 We welcome contributions! Please see the
-[contributing](https://sceua.readthedocs.io/en/latest/CONTRIBUTING/) section for
-guidelines and instructions.
+[contributing](https://cheginit.github.io/sceua/contributing/) section for guidelines
+and instructions.
 
 ## 📄 License
 
