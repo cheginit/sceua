@@ -60,7 +60,8 @@ class Result:
     message : str
         Message describing the termination reason.
     success : bool
-        Whether the optimization was successful.
+        Whether the optimization was successful; ``False`` when the objective
+        returned NaN at every evaluated point.
     xv : numpy.ndarray
         All evaluated parameter sets.
     funv : numpy.ndarray
@@ -272,10 +273,14 @@ def _update_population(
         idx = np.argsort(pop_f)
         pop_x, pop_f = pop_x[idx], pop_f[idx]
 
-    if pop_f[0] < best_f:
+    # NaN sorts last, so a NaN best means every evaluation so far was NaN.
+    if pop_f[0] < best_f or np.isnan(best_f):
         best_x = pop_x[0].copy()
         best_f = pop_f[0]
-        no_change_count = 0 if abs(last_best_f - best_f) > tolerance else no_change_count + 1
+        improved = not np.isnan(best_f) and (
+            np.isnan(last_best_f) or last_best_f - best_f > tolerance
+        )
+        no_change_count = 0 if improved else no_change_count + 1
     else:
         no_change_count += 1
 
@@ -364,7 +369,8 @@ def minimize(  # noqa: PLR0915
         - ``message`` : str
             Description of the termination reason.
         - ``success`` : bool
-            Whether the optimizer exited successfully.
+            Whether the optimizer exited successfully; ``False`` when the
+            objective returned NaN at every evaluated point.
         - ``xv`` : numpy.ndarray
             All parameter vectors that were evaluated.
         - ``funv`` : numpy.ndarray
@@ -461,6 +467,9 @@ def minimize(  # noqa: PLR0915
         message = f"Maximum function evaluations reached ({max_evals})"
     elif no_change_count >= max_tolerant_iter:
         message = f"No improvement for {max_tolerant_iter} iterations (< {tolerance})"
+    success = not np.isnan(best_f)
+    if not success:
+        message = f"Objective returned NaN at all {n_evals} evaluated points"
 
     return Result(
         x=best_x,
@@ -468,7 +477,7 @@ def minimize(  # noqa: PLR0915
         nit=iters,
         nfev=n_evals,
         message=message,
-        success=True,
+        success=success,
         xv=np.asarray(xv),
         funv=np.asarray(funv),
     )
