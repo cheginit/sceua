@@ -6,7 +6,7 @@ import pytest
 from landscapes import single_objective
 
 import sceua
-from sceua.sceua import _evolve_complexes, _pca_recovery
+from sceua.sceua import _evolve_complexes, _pca_recovery, _Progress
 
 MIXED_SCALE = np.array([1e3, 1, 1e-2, 1, 1])
 
@@ -231,6 +231,55 @@ def test_pca_recovery_ignores_parameter_units():
     )
 
 
+def _sphere(x):
+    return float(np.sum((x - 0.3) ** 2))
+
+
+def test_stopping_ignores_objective_scale_and_shift():
+    bounds = [(-5, 5)] * 3
+    plain = sceua.minimize(_sphere, bounds, seed=0)
+    scaled = sceua.minimize(lambda x: 1e-8 * _sphere(x), bounds, seed=0)
+    shifted = sceua.minimize(lambda x: _sphere(x) + 100.0, bounds, seed=0)
+    assert plain.nfev == scaled.nfev == shifted.nfev
+    assert plain.fun < 1e-4
+
+
+def test_parameter_convergence_uses_bound_scaled_ranges():
+    width = 1e-12
+    result = sceua.minimize(
+        lambda x: float(np.sum((x / width - 0.3) ** 2)), [(0, width)] * 2, seed=0
+    )
+    assert result.nit > 1
+    assert result.fun < 1e-4
+
+
+def test_progress_counts_a_better_median():
+    pop = np.linspace(1.0, 2.0, 20)
+    progress = _Progress.start(pop)
+    for _ in range(5):
+        pop = np.r_[pop[0], pop[1:] - 0.01]  # best unchanged, median improving
+        progress.update(pop, tolerance=1e-6)
+    assert progress.stalled == 0
+
+
+def test_progress_ignores_a_rebounding_median():
+    low, high = np.linspace(1.0, 2.0, 20), np.linspace(1.0, 2.0, 20) + 0.1
+    high[0] = low[0]
+    progress = _Progress.start(low)
+    for pop in (high, low, high, low):
+        progress.update(pop, tolerance=1e-6)
+    assert progress.stalled == 4
+
+
+def test_progress_does_not_count_finite_values_turning_nan():
+    pop = np.linspace(1.0, 2.0, 20)
+    progress = _Progress.start(pop)
+    worse = pop.copy()
+    worse[10:] = np.nan  # the worst half becomes NaN
+    progress.update(worse, tolerance=1e-6)
+    assert progress.stalled == 1
+
+
 def test_rosenbrock():
     n_dim = 20
     result = sceua.minimize(
@@ -243,15 +292,14 @@ def test_rosenbrock():
 
 @pytest.mark.benchmark
 @pytest.mark.parametrize(
-    ("func", "b1", "b2", "n_complexes", "expected"),
+    ("func", "bound", "expected"),
     [
-        (single_objective.booth, (-10, 10), (-10, 10), 200, 0),
-        (single_objective.goldstein_price, (-2, 2), (-2, 2), 400, 3),
-        (single_objective.levi_n13, (-10, 10), (-10, 10), 400, 0),
+        (single_objective.booth, (-10, 10), 0),
+        (single_objective.goldstein_price, (-2, 2), 3),
+        (single_objective.levi_n13, (-10, 10), 0),
     ],
 )
-def test_objective(func, b1, b2, n_complexes, expected):
-    # The population, n_complexes * (2 * n_complexes + 1), exceeds the default budget.
-    max_evals = 2 * n_complexes * (2 * n_complexes + 1)
-    result = sceua.minimize(func, [b1, b2], seed=42, n_complexes=n_complexes, max_evals=max_evals)
+def test_objective(func, bound, expected):
+    # The initial sample alone misses each tolerance, so a pass needs the evolution (L-05).
+    result = sceua.minimize(func, [bound] * 2, seed=42)
     assert abs(result.fun - expected) < 1e-2
