@@ -163,8 +163,9 @@ class _Progress:
     @staticmethod
     def _stats(pop_f: FloatArray) -> tuple[float, float]:
         # NaN counts as worst, so finite values turning NaN never look like progress.
-        ranked = np.where(np.isnan(pop_f), np.inf, pop_f)
-        return float(ranked.min()), float(np.median(ranked))
+        # Halving is exact and keeps the average of two values near the float limit finite.
+        half = np.where(np.isnan(pop_f), np.inf, pop_f) / 2
+        return float(2 * half.min()), float(2 * np.median(half))
 
     @classmethod
     def start(cls, pop_f: FloatArray) -> _Progress:
@@ -172,11 +173,14 @@ class _Progress:
 
     def update(self, pop_f: FloatArray, tolerance: float) -> None:
         """Compare with the records, by a margin that scales with the spread of ``pop_f``."""
-        finite = pop_f[np.isfinite(pop_f)]
-        spread = float(np.subtract(*np.percentile(finite, [75, 25]))) if finite.size > 1 else 0.0
+        finite = pop_f[np.isfinite(pop_f)] / 2
+        half_spread = (
+            float(np.subtract(*np.percentile(finite, [75, 25]))) if finite.size > 1 else 0.0
+        )
+        margin = 2 * tolerance * half_spread
         best, median = self._stats(pop_f)
-        best_gain = _improves(best, self.best, tolerance * spread)
-        median_gain = _improves(median, self.median, tolerance * spread)
+        best_gain = _improves(best, self.best, margin)
+        median_gain = _improves(median, self.median, margin)
         self.best = best if best_gain else self.best
         self.median = median if median_gain else self.median
         self.stalled = 0 if best_gain or median_gain else self.stalled + 1
