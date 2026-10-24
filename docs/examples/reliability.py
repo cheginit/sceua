@@ -179,11 +179,9 @@ summary = (
 summary.round(3)
 
 # %% [markdown]
-# Here all five runs reach NSE 0.5315. A run can also stop early: the stall rule ends it after
-# 30 iterations in which the best value improves by less than `tolerance`, and on this problem about
-# 3 in 20 seeds stop near NSE 0.50. Whatever the run reaches, re-running the model at `Result.x`
-# gives exactly `Result.fun`, no evaluated point beats it, `Result.x` is among the evaluated points,
-# and every evaluated point lies within the bounds:
+# All five runs reach the same NSE. For each run, re-running the model at `Result.x` gives exactly
+# `Result.fun`, no evaluated point beats it, `Result.x` is among the evaluated points, and every
+# evaluated point lies within the bounds:
 
 # %%
 for r in runs.values():
