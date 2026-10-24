@@ -145,9 +145,41 @@ def _evaluate(
     return np.asarray(values, dtype=np.float64)
 
 
-def _improves(value: float, current: float) -> bool:
-    """Whether ``value`` beats ``current``, with NaN worse than any number."""
-    return bool(value < current or (np.isnan(current) and not np.isnan(value)))
+def _improves(value: float, current: float, margin: float = 0.0) -> bool:
+    """Whether ``value`` beats ``current`` by more than ``margin``, with NaN worse than any number."""
+    if np.isnan(current):
+        return not np.isnan(value)
+    return bool(current - value > margin)
+
+
+@dataclass
+class _Progress:
+    """Iterations since the best value or the population median last beat its record."""
+
+    best: float
+    median: float
+    stalled: int = 0
+
+    @staticmethod
+    def _stats(pop_f: FloatArray) -> tuple[float, float]:
+        # NaN counts as worst, so finite values turning NaN never look like progress.
+        ranked = np.where(np.isnan(pop_f), np.inf, pop_f)
+        return float(ranked.min()), float(np.median(ranked))
+
+    @classmethod
+    def start(cls, pop_f: FloatArray) -> _Progress:
+        return cls(*cls._stats(pop_f))
+
+    def update(self, pop_f: FloatArray, tolerance: float) -> None:
+        """Compare with the records, by a margin that scales with the spread of ``pop_f``."""
+        finite = pop_f[np.isfinite(pop_f)]
+        spread = float(np.subtract(*np.percentile(finite, [75, 25]))) if finite.size > 1 else 0.0
+        best, median = self._stats(pop_f)
+        best_gain = _improves(best, self.best, tolerance * spread)
+        median_gain = _improves(median, self.median, tolerance * spread)
+        self.best = best if best_gain else self.best
+        self.median = median if median_gain else self.median
+        self.stalled = 0 if best_gain or median_gain else self.stalled + 1
 
 
 def _evolve_complexes(
@@ -304,10 +336,7 @@ def _update_population(
     up_bounds: FloatArray,
     best_f: float,
     best_x: FloatArray,
-    last_best_f: float,
-    no_change_count: int,
-    tolerance: float,
-) -> tuple[FloatArray, FloatArray, FloatArray, float, int]:
+) -> tuple[FloatArray, FloatArray, FloatArray, float]:
     """Update population based on the best solution found so far and PCA recovery."""
     idx = np.argsort(pop_f)
     pop_x, pop_f = pop_x[idx], pop_f[idx]
@@ -322,12 +351,8 @@ def _update_population(
     if _improves(pop_f[0], best_f):
         best_x = pop_x[0].copy()
         best_f = pop_f[0]
-        improved = np.isnan(last_best_f) or last_best_f - best_f > tolerance
-        no_change_count = 0 if improved else no_change_count + 1
-    else:
-        no_change_count += 1
 
-    return pop_x, pop_f, best_x, best_f, no_change_count
+    return pop_x, pop_f, best_x, best_f
 
 
 def minimize(
@@ -343,7 +368,7 @@ def minimize(
     max_iter: int = 1000,
     max_tolerant_iter: int = 30,
     tolerance: float = 1e-6,
-    x_tolerance: float = 1e-8,
+    x_tolerance: float = 1e-4,
     seed: int | None = None,
     pca_freq: int = 1,
     pca_tol: float = 1e-3,
@@ -377,11 +402,15 @@ def minimize(
     max_iter : int, optional
         Maximum number of iterations, defaults to 1000.
     max_tolerant_iter : int, optional
-        Maximum number of tolerated iterations without improvement, defaults to 30.
+        Maximum number of iterations in which neither the best objective value nor the
+        population's median value beats its record, defaults to 30.
     tolerance : float, optional
-        Tolerance for improvement in function value, defaults to 1e-6.
+        Smallest improvement that counts as progress, as a fraction of the interquartile
+        range of the population's objective values, defaults to 1e-6. Scaling or shifting
+        the objective leaves the stopping point unchanged.
     x_tolerance : float, optional
-        Tolerance for parameter convergence (parameter space), defaults to 1e-8.
+        Parameter convergence: the run stops once every parameter's range across the
+        population is below this fraction of its bound range, defaults to 1e-4.
     seed : int, optional
         Random seed for reproducibility, defaults to ``None``.
     pca_freq : int, optional
@@ -451,13 +480,12 @@ def minimize(
     idx = np.argsort(pop_f)
     pop_x, pop_f = pop_x[idx], pop_f[idx]
     best_x, best_f = pop_x[0].copy(), pop_f[0]
-    last_best_f = best_f
+    progress = _Progress.start(pop_f)
 
     iters = 0
-    no_change_count = 0
     message = "Maximum iterations reached"
     n_evals = len(xv)
-    while n_evals < max_evals and iters < max_iter and no_change_count < max_tolerant_iter:
+    while n_evals < max_evals and iters < max_iter and progress.stalled < max_tolerant_iter:
         # Create complex indices with best solution (index 0) in every complex
         # based on a suggestion from https://github.com/sambo-optimization/sambo
         # Index 0 is listed once: a duplicate would let the old best overwrite a new one.
@@ -477,7 +505,7 @@ def minimize(
                 alpha=alpha,
                 beta=beta,
             )
-        pop_x, pop_f, best_x, best_f, no_change_count = _update_population(
+        pop_x, pop_f, best_x, best_f = _update_population(
             objective,
             args,
             pop_x,
@@ -490,24 +518,19 @@ def minimize(
             up_bounds=up_bounds,
             best_f=best_f,
             best_x=best_x,
-            last_best_f=last_best_f,
-            no_change_count=no_change_count,
-            tolerance=tolerance,
         )
-
-        last_best_f = best_f
+        progress.update(pop_f, tolerance)
         iters += 1
         n_evals = len(xv)
 
-        param_range = np.max(pop_x, axis=0) - np.min(pop_x, axis=0)
-        if np.sum(param_range) < x_tolerance:
-            message = f"Parameter convergence (sum of ranges < {x_tolerance})"
+        if np.max(np.ptp(pop_x, axis=0) / (up_bounds - lo_bounds)) < x_tolerance:
+            message = f"Parameter convergence (every range < {x_tolerance} of its bounds)"
             break
 
     if n_evals >= max_evals:
         message = f"Maximum function evaluations reached ({max_evals})"
-    elif no_change_count >= max_tolerant_iter:
-        message = f"No improvement for {max_tolerant_iter} iterations (< {tolerance})"
+    elif progress.stalled >= max_tolerant_iter:
+        message = f"No progress of the best value or the median for {max_tolerant_iter} iterations"
     success = not np.isnan(best_f)
     if not success:
         message = f"Objective returned NaN at all {n_evals} evaluated points"
