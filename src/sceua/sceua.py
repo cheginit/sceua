@@ -162,8 +162,9 @@ class _Progress:
 
     @staticmethod
     def _stats(pop_f: FloatArray) -> tuple[float, float]:
-        # NaN counts as worst, so finite values turning NaN never look like progress.
-        # Halving is exact and keeps the average of two values near the float limit finite.
+        # NaN ranks worst, so both statistics stay defined while some points are NaN.
+        # Halving keeps a two-value average near the float limit finite, and is exact
+        # except for subnormals.
         half = np.where(np.isnan(pop_f), np.inf, pop_f) / 2
         return float(2 * half.min()), float(2 * np.median(half))
 
@@ -406,7 +407,9 @@ def minimize(
         floating-point resolution.
     x_tolerance : float, optional
         Parameter convergence: the run stops once every parameter's range across the
-        population is below this fraction of its bound range, defaults to 1e-4.
+        population is below this fraction of its bound range, defaults to 1e-4. On a
+        smooth objective this test usually ends the run, and a parameter the objective
+        ignores can keep it from firing.
     seed : int, optional
         Random seed for reproducibility, defaults to ``None``.
     pca_freq : int, optional

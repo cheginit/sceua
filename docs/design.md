@@ -227,9 +227,10 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     Griewank 0 and 0, Styblinski-Tang 8 and 13. Holdout set, seeds 100 to 119, run once:
     HYMOD log-flow NSE 17 and 20, Ackley 1 and 1, Zakharov 15 and 20, Dixon-Price 5 and
     17, a mixed-scale sphere 20 and 20. On the seeds the old rule solved, every one
-    stays solved, at 1.00 to 1.38 times the median evaluations. HYMOD with its objective
-    scaled by 1e-8, shifted by 1e6, or with `c_max` in meters solves on 20 of 20 seeds,
-    against 0, 17, and 15 before.
+    stays solved, at 1.00 to 1.38 times the old median evaluations per problem and up to
+    2.61 times on a single seed. HYMOD with its objective scaled by 1e-8, shifted by
+    1e6, or with `c_max` in meters solves on 20 of 20 seeds, against 0, 17, and 15
+    before.
 - **Rejected:** Measured on the tuning set. Median progress with an absolute threshold
     still stopped the scaled objective after about 360 evaluations. A threshold from the
     initial population's spread was about 0.05 on Rosenbrock and solved none of it. A
@@ -280,12 +281,18 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     bar set in advance, and stopped Qing at a median f of 15.0 against 2.4. A threshold
     scaled by the initial sample inherits that sample's range. A windowed record that
     would give `tolerance` an effect was not measured.
-- **Limits:** On a smooth float64 objective the progress rule alone does not end a run;
-    the x-stop, `max_iter`, or `max_evals` does. A parameter the objective ignores keeps
-    the x-stop from firing, so the run continues until gains reach float resolution: a
-    5-D sphere that ignores one parameter takes 3,783 evaluations on average, against
-    2,472 under the rule before D-14, which reached 1e-6 on 9 of 20 seeds against 20.
-    Callers passing `tolerance` get a `TypeError`.
+- **Limits:** While an objective keeps yielding strict gains, the progress rule cannot
+    end the run, and the x-stop, `max_iter`, or `max_evals` does: a 3-D sphere with the
+    x-stop off reaches `max_iter` at 7,290 evaluations. The progress rule ends a run
+    once gains stop or round away, as in all 20 Rosenbrock tuning runs, constant
+    regions, objectives computed in float32 such as HYMOD, and the same sphere shifted
+    by 100, which stalls after 552 iterations. Where a parameter has no effect, the
+    x-stop cannot fire and the run goes on until gains stop: a 5-D sphere that ignores
+    one parameter takes 3,783 evaluations on average, against 2,472 under the rule
+    before D-14, which reached 1e-6 on 9 of 20 seeds against 20. The cost set shows the
+    other large increases: a 1-D sphere takes 968 evaluations against 276 (within 1e-6
+    on 20 of 20 seeds against 2), and 20-D Rastrigin 10,380 against 1,098 (median f 7.0
+    against 126). Callers passing `tolerance` get a `TypeError`.
 
 ## Lessons
 
