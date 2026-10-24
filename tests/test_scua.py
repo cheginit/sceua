@@ -280,6 +280,19 @@ def test_progress_does_not_count_finite_values_turning_nan():
     assert progress.stalled == 1
 
 
+def test_progress_survives_values_near_the_float_limit():
+    # A spread wider than the float range would make the margin infinite.
+    wide = np.array([-1e308] * 3 + [1e308] * 3)
+    progress = _Progress.start(wide)
+    progress.update(np.array([-1.1e308] * 3 + [1e308] * 3), tolerance=1e-6)
+    assert progress.stalled == 0
+    # Averaging two central values of -1e308 would overflow the median record to -inf.
+    central = np.array([-1.5e308, -1.2e308, -1e308, -1e308, 1e308, 1.2e308])
+    progress = _Progress.start(central)
+    progress.update(np.r_[central[:2], -1.05e308, -1.05e308, central[4:]], tolerance=1e-6)
+    assert progress.stalled == 0
+
+
 def test_rosenbrock():
     n_dim = 20
     result = sceua.minimize(
