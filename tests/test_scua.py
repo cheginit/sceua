@@ -258,7 +258,7 @@ def test_progress_counts_a_better_median():
     progress = _Progress.start(pop)
     for _ in range(5):
         pop = np.r_[pop[0], pop[1:] - 0.01]  # best unchanged, median improving
-        progress.update(pop, tolerance=1e-6)
+        progress.update(pop)
     assert progress.stalled == 0
 
 
@@ -267,7 +267,7 @@ def test_progress_ignores_a_rebounding_median():
     high[0] = low[0]
     progress = _Progress.start(low)
     for pop in (high, low, high, low):
-        progress.update(pop, tolerance=1e-6)
+        progress.update(pop)
     assert progress.stalled == 4
 
 
@@ -276,20 +276,15 @@ def test_progress_does_not_count_finite_values_turning_nan():
     progress = _Progress.start(pop)
     worse = pop.copy()
     worse[10:] = np.nan  # the worst half becomes NaN
-    progress.update(worse, tolerance=1e-6)
+    progress.update(worse)
     assert progress.stalled == 1
 
 
 def test_progress_survives_values_near_the_float_limit():
-    # A spread wider than the float range would make the margin infinite.
-    wide = np.array([-1e308] * 3 + [1e308] * 3)
-    progress = _Progress.start(wide)
-    progress.update(np.array([-1.1e308] * 3 + [1e308] * 3), tolerance=1e-6)
-    assert progress.stalled == 0
     # Averaging two central values of -1e308 would overflow the median record to -inf.
     central = np.array([-1.5e308, -1.2e308, -1e308, -1e308, 1e308, 1.2e308])
     progress = _Progress.start(central)
-    progress.update(np.r_[central[:2], -1.05e308, -1.05e308, central[4:]], tolerance=1e-6)
+    progress.update(np.r_[central[:2], -1.05e308, -1.05e308, central[4:]])
     assert progress.stalled == 0
 
 
