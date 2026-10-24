@@ -208,7 +208,7 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
 
 ### D-14: A run stops when neither the best value nor the population median progresses
 
-- **Status:** accepted; answers Q-03.
+- **Status:** accepted; answers Q-03. Its `tolerance` margin is superseded by D-15.
 - **Date:** 2026-10-23.
 - **Decision:** An iteration makes progress when the best objective value or the
     population's median value beats its record by more than `tolerance` times the
@@ -256,6 +256,36 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     basin, at f = 0.009 to 0.042, and 19 of 20 stop short of the 1e-2 threshold;
     continued, the same runs pass it on 17 of those 19 seeds (Q-07). `tolerance` and
     `x_tolerance` changed meaning, so callers passing absolute values must convert them.
+
+### D-15: Progress is any strict gain of the best value or the median
+
+- **Status:** accepted.
+- **Date:** 2026-10-24.
+- **Decision:** An iteration makes progress when the best objective value or the
+    population's median value is lower than its record, compared through `_improves()`
+    with no margin. `minimize()` has no `tolerance` argument; the rest of D-14 stands.
+- **Why:** D-14's margin, `tolerance` times the population's current IQR, never decided
+    a stop. A record moves only on progress while the IQR shrinks, so gains accumulated
+    against the record soon exceed the margin. `tolerance` from 0 to 1e-2 left the stops
+    of HYMOD, Rosenbrock, and Rastrigin unchanged. With the margin at 0, every run
+    matched D-14 in value, evaluations, and iterations: 335 of 335 on the tuning pool
+    (D-14's tuning and holdout sets, the diagnostics, and a cost set with 15 complexes,
+    an insensitive parameter, 1-D, and 20-D) and 140 of 140 on a fresh holdout of 7
+    problems never run before, seeds 200 to 219.
+- **Rejected:** An objective-space stop at a population IQR below `f_tolerance` times
+    the initial population's IQR. At 1e-4 to 1e-6 it ended problems whose initial values
+    span orders of magnitude far from the optimum: Zakharov went from 20 solved seeds to
+    0 at each of those values. At 1e-8, the only value that lost at most one seed on
+    every tuning problem, it cut the fresh holdout's evaluations by 7.8% against a 10%
+    bar set in advance, and stopped Qing at a median f of 15.0 against 2.4. A threshold
+    scaled by the initial sample inherits that sample's range. A windowed record that
+    would give `tolerance` an effect was not measured.
+- **Limits:** On a smooth float64 objective the progress rule alone does not end a run;
+    the x-stop, `max_iter`, or `max_evals` does. A parameter the objective ignores keeps
+    the x-stop from firing, so the run continues until gains reach float resolution: a
+    5-D sphere that ignores one parameter takes 3,783 evaluations on average, against
+    2,472 under the rule before D-14, which reached 1e-6 on 9 of 20 seeds against 20.
+    Callers passing `tolerance` get a `TypeError`.
 
 ## Lessons
 

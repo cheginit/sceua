@@ -43,9 +43,9 @@ One-line summaries of the decisions any code change can break. The IDs point int
     (D-07).
 - `max_evals` is honored as given and must be at least the population size (D-08).
 - Populations and objective values are stored as float64 (D-09).
-- A run stops when neither the best value nor the population median beats its record by
-    `tolerance` times the population's objective IQR for `max_tolerant_iter` iterations,
-    or when every parameter's range is below `x_tolerance` of its bounds (D-14).
+- A run stops when neither the best value nor the population median beats its record for
+    `max_tolerant_iter` iterations, or when every parameter's range is below
+    `x_tolerance` of its bounds (D-14, D-15).
 - Python packages come from PyPI. `[tool.pixi.dependencies]` holds only system libraries
     (D-11).
 

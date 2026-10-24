@@ -36,8 +36,9 @@ from the literature over the original 1994 version. These enhancements include:
     mutation operations.
 - **Automatic parameter determination** with sensible defaults based on problem
     dimensionality.
-- **Comprehensive convergence criteria**, including function value tolerance, parameter
-    tolerance, and maximum iterations.
+- **Scale-free stopping rules**: a run ends when neither the best value nor the
+    population median improves for a number of iterations, when every parameter's range
+    shrinks below a fraction of its bounds, or at an iteration or evaluation budget.
 
 Additionally, the package offers:
 

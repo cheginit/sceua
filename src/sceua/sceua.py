@@ -145,11 +145,11 @@ def _evaluate(
     return np.asarray(values, dtype=np.float64)
 
 
-def _improves(value: float, current: float, margin: float = 0.0) -> bool:
-    """Whether ``value`` beats ``current`` by more than ``margin``, with NaN worse than any number."""
+def _improves(value: float, current: float) -> bool:
+    """Whether ``value`` beats ``current``, with NaN worse than any number."""
     if np.isnan(current):
         return not np.isnan(value)
-    return bool(current - value > margin)
+    return bool(value < current)
 
 
 @dataclass
@@ -171,16 +171,11 @@ class _Progress:
     def start(cls, pop_f: FloatArray) -> _Progress:
         return cls(*cls._stats(pop_f))
 
-    def update(self, pop_f: FloatArray, tolerance: float) -> None:
-        """Compare with the records, by a margin that scales with the spread of ``pop_f``."""
-        finite = pop_f[np.isfinite(pop_f)] / 2
-        half_spread = (
-            float(np.subtract(*np.percentile(finite, [75, 25]))) if finite.size > 1 else 0.0
-        )
-        margin = 2 * tolerance * half_spread
+    def update(self, pop_f: FloatArray) -> None:
+        """Compare the best value and the median of ``pop_f`` with their records."""
         best, median = self._stats(pop_f)
-        best_gain = _improves(best, self.best, margin)
-        median_gain = _improves(median, self.median, margin)
+        best_gain = _improves(best, self.best)
+        median_gain = _improves(median, self.median)
         self.best = best if best_gain else self.best
         self.median = median if median_gain else self.median
         self.stalled = 0 if best_gain or median_gain else self.stalled + 1
@@ -371,7 +366,6 @@ def minimize(
     max_evals: int = 50000,
     max_iter: int = 1000,
     max_tolerant_iter: int = 30,
-    tolerance: float = 1e-6,
     x_tolerance: float = 1e-4,
     seed: int | None = None,
     pca_freq: int = 1,
@@ -407,11 +401,9 @@ def minimize(
         Maximum number of iterations, defaults to 1000.
     max_tolerant_iter : int, optional
         Maximum number of iterations in which neither the best objective value nor the
-        population's median value beats its record, defaults to 30.
-    tolerance : float, optional
-        Smallest improvement that counts as progress, as a fraction of the interquartile
-        range of the population's objective values, defaults to 1e-6. Scaling or shifting
-        the objective leaves the stopping point unchanged.
+        population's median value beats its record, defaults to 30. Scaling the objective
+        by a positive factor or shifting it leaves the stopping point unchanged, up to
+        floating-point resolution.
     x_tolerance : float, optional
         Parameter convergence: the run stops once every parameter's range across the
         population is below this fraction of its bound range, defaults to 1e-4.
@@ -523,7 +515,7 @@ def minimize(
             best_f=best_f,
             best_x=best_x,
         )
-        progress.update(pop_f, tolerance)
+        progress.update(pop_f)
         iters += 1
         n_evals = len(xv)
 
