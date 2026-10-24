@@ -6,7 +6,7 @@ import pytest
 from landscapes import single_objective
 
 import sceua
-from sceua.sceua import _evolve_complexes, _pca_recovery, _Progress
+from sceua.sceua import _evolve_complexes, _parameters_converged, _pca_recovery, _Progress
 
 MIXED_SCALE = np.array([1e3, 1, 1e-2, 1, 1])
 
@@ -187,8 +187,8 @@ def test_new_best_is_kept():
 
 def test_one_dimensional():
     result = sceua.minimize(lambda x: float((x[0] - 0.3) ** 2), [(-1, 1)], seed=42)
-    # The absolute stall rule stops runs near 1e-5 here, across seeds.
-    assert result.fun < 1e-3
+    # The x-stop ends these runs below 1e-9 across seeds.
+    assert result.fun < 1e-8
 
 
 def test_hymod_without_rain_makes_no_runoff(hymod):
@@ -244,6 +244,44 @@ def test_stopping_ignores_objective_scale_and_shift():
     assert plain.fun < 1e-4
 
 
+def _quantized_sphere(x):
+    return float(np.floor(1e3 * _sphere(x)) / 1e3)
+
+
+def test_stall_rule_ignores_objective_scale_and_shift():
+    # With the x-stop off, the quantized objective ends every run by the stall rule.
+    bounds = [(-5, 5)] * 3
+    runs = [
+        sceua.minimize(f, bounds, seed=0, x_tolerance=0)
+        for f in (
+            _quantized_sphere,
+            lambda x: 1e-8 * _quantized_sphere(x),
+            lambda x: _quantized_sphere(x) + 100.0,
+        )
+    ]
+    assert all(r.message.startswith("No progress") for r in runs)
+    assert runs[0].nfev == runs[1].nfev == runs[2].nfev
+    # The best value and the median reach the quantized floor of 0, after which no
+    # iteration can progress, so the stop comes exactly max_tolerant_iter later.
+    longer = sceua.minimize(_quantized_sphere, bounds, seed=0, x_tolerance=0, max_tolerant_iter=40)
+    assert runs[0].nit > 30
+    assert longer.nit == runs[0].nit + 10
+
+
+def test_flat_objective_stops_after_patience():
+    result = sceua.minimize(lambda _: 1.0, [(0, 1)] * 2, max_tolerant_iter=5, seed=0)
+    assert result.message.startswith("No progress")
+    assert result.nit == 5
+
+
+def test_parameter_convergence_needs_every_range():
+    lo, up = np.zeros(5), np.array([1.0, 10, 100, 1e3, 1e4])
+    pop = lo + np.outer([0, 0.6e-4], up - lo)
+    assert _parameters_converged(pop, lo_bounds=lo, up_bounds=up, x_tolerance=1e-4)
+    pop[1, 2] = 2e-4 * up[2]  # one parameter stays wide
+    assert not _parameters_converged(pop, lo_bounds=lo, up_bounds=up, x_tolerance=1e-4)
+
+
 def test_parameter_convergence_uses_bound_scaled_ranges():
     width = 1e-12
     result = sceua.minimize(
@@ -259,6 +297,14 @@ def test_progress_counts_a_better_median():
     for _ in range(5):
         pop = np.r_[pop[0], pop[1:] - 0.01]  # best unchanged, median improving
         progress.update(pop)
+    assert progress.stalled == 0
+
+
+def test_progress_counts_a_better_median_among_nan_points():
+    pop = np.linspace(1.0, 2.0, 20)
+    pop[-3:] = np.nan
+    progress = _Progress.start(pop)
+    progress.update(np.r_[pop[0], pop[1:-3] - 0.01, pop[-3:]])  # best and NaN points stay
     assert progress.stalled == 0
 
 
