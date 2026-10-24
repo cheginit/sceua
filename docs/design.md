@@ -240,11 +240,14 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     compares the median of the newest and the oldest 30% of the best and median
     histories over at least 139 iterations here. It solved Rosenbrock on 20 of 20 tuning
     seeds and Ackley on 18 of 20 holdout seeds, against 14 and 1, and took 1.5 times the
-    median evaluations on both HYMOD problems. Its success performance was more than 10%
-    lower on 1 of 9 problems and more than 10% higher on 4. Published rules with
-    absolute or value-relative thresholds, such as CMA-ES's TolFun (Tanabe, 2026),
-    SciPy's differential evolution, and Diff (Zielinski and Laur, 2008), stop the scaled
-    or the shifted objective early by construction.
+    median evaluations on both HYMOD problems. Its evaluations per solved run, counted
+    over all runs, were more than 10% lower on 1 of 9 problems and more than 10% higher
+    on 4. The K-iterations rule, criterion C-IV of Fernández-Vargas et al. (2016),
+    counts any strict improvement of the best value as progress and solved exactly the
+    old rule's counts on both sets: HYMOD 17, Rosenbrock 6, Rastrigin 0, Dixon-Price 5.
+    Published rules with absolute or offset-dependent thresholds, such as CMA-ES's
+    TolFun (Tanabe, 2026), SciPy's differential evolution, and Diff (Zielinski and Laur,
+    2008), stop the scaled or the shifted objective early by construction.
 - **Limits:** Evaluations grow with the population: HYMOD with 15 complexes takes about
     9,800 and with 30 complexes reaches `max_iter` near 33,000, where the old rule
     stopped at 1,000 to 6,000 evaluations with NSE 0.50 to 0.53. Patience counts
@@ -415,6 +418,10 @@ informed this question, so an answer needs new holdout problems and seeds.
 - Duan, Q., Sorooshian, S., and Gupta, V. K. (1994). Optimal use of the SCE-UA global
     optimization method for calibrating watershed models. *Journal of Hydrology*, 158.
     <https://doi.org/10.1016/0022-1694(94)90057-4>
+- Fernández-Vargas, J. A., Bonilla-Petriciolet, A., Rangaiah, G. P., and Fateen, S. K.
+    (2016). Performance analysis of stopping criteria of population-based metaheuristics
+    for global optimization in phase equilibrium calculations and modeling. *Fluid Phase
+    Equilibria*, 427. <https://doi.org/10.1016/j.fluid.2016.06.037>
 - Hansen, N. (2016). The CMA evolution strategy: a tutorial. arXiv:1604.00772.
     <https://arxiv.org/abs/1604.00772>
 - Liu, J., Hong, H., Fan, W., and Chen, Y. (2024). A novel fast and efficient adaptive
