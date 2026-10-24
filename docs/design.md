@@ -206,6 +206,44 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
 - **Rejected:** A tracked `CHANGELOG.md`, which needs a commit on `main` before every
     tag.
 
+### D-14: A run stops when neither the best value nor the population median progresses
+
+- **Status:** accepted; answers Q-03.
+- **Date:** 2026-10-23.
+- **Decision:** An iteration makes progress when the best objective value or the
+    population's median value beats its record by more than `tolerance` times the
+    interquartile range of the population's finite values. NaN counts as worse than any
+    number in both statistics, and a record moves only when its statistic makes
+    progress. A run stops after `max_tolerant_iter` iterations without progress, or once
+    every parameter's range across the population is below `x_tolerance` (default 1e-4)
+    of its bound range. `_Progress` holds the records.
+- **Why:** Under the previous rule, an absolute improvement of the best value, every
+    tuning run ended by stalling, after 355 to 4,746 evaluations of a 50,000 budget. On
+    HYMOD, two of the three early stops kept the best point of the starting sample for
+    30 iterations while the population median rose from NSE 0.30 to 0.46. Benchmark with
+    default settings, 20 seeds per problem, 5-D, solved meaning within 1e-2 of the known
+    optimum (1e-3 of the best value found for HYMOD). Tuning set, seeds 0 to 19, solved
+    before and after: HYMOD NSE 17 and 20, Rosenbrock 6 and 14, Rastrigin 0 and 8,
+    Griewank 0 and 0, Styblinski-Tang 8 and 13. Holdout set, seeds 100 to 119, run once:
+    HYMOD log-flow NSE 17 and 20, Ackley 1 and 1, Zakharov 15 and 20, Dixon-Price 5 and
+    17, a mixed-scale sphere 20 and 20. On the seeds the old rule solved, every one
+    stays solved, at 1.00 to 1.38 times the median evaluations. HYMOD with its objective
+    scaled by 1e-8, shifted by 1e6, or with `c_max` in meters solves on 20 of 20 seeds,
+    against 0, 17, and 15 before.
+- **Rejected:** Measured on the tuning set. Median progress with an absolute threshold
+    still stopped the scaled objective after about 360 evaluations. A threshold from the
+    initial population's spread was about 0.05 on Rosenbrock and solved none of it. A
+    threshold relative to the current value stopped the shifted objective after 359
+    evaluations, and its zero-optimum runs went to `max_iter`. Five times the patience
+    kept the absolute threshold and cost 56% more evaluations on HYMOD.
+- **Limits:** Evaluations grow with the population: HYMOD with 15 complexes takes about
+    9,800 and with 30 complexes reaches `max_iter` near 33,000, where the old rule
+    stopped at 1,000 to 6,000 evaluations with NSE 0.50 to 0.53. Patience counts
+    iterations, so the population turnovers it allows vary with the complex size, which
+    the 5-D benchmark could not test. Local minima still catch 19 of 20 Ackley runs.
+    `tolerance` and `x_tolerance` changed meaning, so callers passing absolute values
+    must convert them.
+
 ## Lessons
 
 ### L-01: Moved points kept the values of where they had been
@@ -303,7 +341,7 @@ adaptive `θ` (Liu et al., 2024), which needs a guard for objectives near zero.
 
 ### Q-03: Stopping rules depend on scale
 
-**Status:** open.
+**Status:** answered by D-14.
 
 `tolerance` is an absolute improvement per iteration and `x_tolerance` an absolute sum
 of parameter ranges. A 2-D quadratic on `[0, 1e-12]²` stops after one iteration. Duan's
