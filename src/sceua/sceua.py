@@ -152,6 +152,13 @@ def _improves(value: float, current: float) -> bool:
     return bool(value < current)
 
 
+def _parameters_converged(
+    pop_x: FloatArray, *, lo_bounds: FloatArray, up_bounds: FloatArray, x_tolerance: float
+) -> bool:
+    """Whether every parameter's range across ``pop_x`` is below ``x_tolerance`` of its bounds."""
+    return bool(np.max(np.ptp(pop_x, axis=0) / (up_bounds - lo_bounds)) < x_tolerance)
+
+
 @dataclass
 class _Progress:
     """Iterations since the best value or the population median last beat its record."""
@@ -522,7 +529,9 @@ def minimize(
         iters += 1
         n_evals = len(xv)
 
-        if np.max(np.ptp(pop_x, axis=0) / (up_bounds - lo_bounds)) < x_tolerance:
+        if _parameters_converged(
+            pop_x, lo_bounds=lo_bounds, up_bounds=up_bounds, x_tolerance=x_tolerance
+        ):
             message = f"Parameter convergence (every range < {x_tolerance} of its bounds)"
             break
 
