@@ -235,14 +235,24 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     initial population's spread was about 0.05 on Rosenbrock and solved none of it. A
     threshold relative to the current value stopped the shifted objective after 359
     evaluations, and its zero-optimum runs went to `max_iter`. Five times the patience
-    kept the absolute threshold and cost 56% more evaluations on HYMOD.
+    kept the absolute threshold and cost 56% more evaluations on HYMOD. On both sets,
+    the closest published rule, the Stagnation criterion of CMA-ES (Hansen, 2016),
+    compares the median of the newest and the oldest 30% of the best and median
+    histories over at least 139 iterations here. It solved Rosenbrock on 20 of 20 tuning
+    seeds and Ackley on 18 of 20 holdout seeds, against 14 and 1, and took 1.5 times the
+    median evaluations on both HYMOD problems. Its success performance was more than 10%
+    lower on 1 of 9 problems and more than 10% higher on 4. Published rules with
+    absolute or value-relative thresholds, such as CMA-ES's TolFun (Tanabe, 2026),
+    SciPy's differential evolution, and Diff (Zielinski and Laur, 2008), stop the scaled
+    or the shifted objective early by construction.
 - **Limits:** Evaluations grow with the population: HYMOD with 15 complexes takes about
     9,800 and with 30 complexes reaches `max_iter` near 33,000, where the old rule
     stopped at 1,000 to 6,000 evaluations with NSE 0.50 to 0.53. Patience counts
     iterations, so the population turnovers it allows vary with the complex size, which
-    the 5-D benchmark could not test. Local minima still catch 19 of 20 Ackley runs.
-    `tolerance` and `x_tolerance` changed meaning, so callers passing absolute values
-    must convert them.
+    the 5-D benchmark could not test. Every Ackley holdout run stops in the global
+    basin, at f = 0.009 to 0.042, and 19 of 20 stop short of the 1e-2 threshold;
+    continued, the same runs pass it on 17 of those 19 seeds (Q-07). `tolerance` and
+    `x_tolerance` changed meaning, so callers passing absolute values must convert them.
 
 ## Lessons
 
@@ -377,6 +387,17 @@ DDS (Tolson and Shoemaker, 2007) has one parameter, schedules itself by the eval
 budget, and does well on expensive watershed models (Arsenault et al., 2014). It fits
 the package's users and API.
 
+### Q-07: Patience is 30 iterations whatever the problem
+
+**Status:** open.
+
+D-14 ends a run after 30 iterations without progress, which cuts every Ackley holdout
+run during a pause. The Stagnation criterion of CMA-ES, whose window is at least 139
+iterations here, solves 18 of the 20 against 1 at 2.7 times the median evaluations, and
+costs 1.5 times on HYMOD, where both rules solve every seed. A patience that grows with
+the dimension or with the iterations already run is untested. The 2026-10-23 holdout has
+informed this question, so an answer needs new holdout problems and seeds.
+
 ## References
 
 - Arsenault, R., Poulin, A., Côté, P., and Brissette, F. (2014). Comparison of
@@ -394,12 +415,21 @@ the package's users and API.
 - Duan, Q., Sorooshian, S., and Gupta, V. K. (1994). Optimal use of the SCE-UA global
     optimization method for calibrating watershed models. *Journal of Hydrology*, 158.
     <https://doi.org/10.1016/0022-1694(94)90057-4>
+- Hansen, N. (2016). The CMA evolution strategy: a tutorial. arXiv:1604.00772.
+    <https://arxiv.org/abs/1604.00772>
 - Liu, J., Hong, H., Fan, W., and Chen, Y. (2024). A novel fast and efficient adaptive
     shuffled complex evolution algorithm for model parameter calibration. *Frontiers in
     Environmental Science*, 11. <https://doi.org/10.3389/fenvs.2023.1341017>
 - Muttil, N., and Jayawardena, A. W. (2008). Shuffled Complex Evolution model
     calibrating algorithm: enhancing its robustness and efficiency. *Hydrological
     Processes*, 22(23). <https://doi.org/10.1002/hyp.7082>
+- Tanabe, R. (2026). Quantitative performance analysis of stopping criteria for CMA-ES.
+    *Parallel Problem Solving from Nature, PPSN XIX*, 114-129.
+    <https://doi.org/10.1007/978-3-032-36226-1_8>
 - Tolson, B. A., and Shoemaker, C. A. (2007). Dynamically dimensioned search algorithm
     for computationally efficient watershed model calibration. *Water Resources
     Research*, 43. <https://doi.org/10.1029/2005WR004723>
+- Zielinski, K., and Laur, R. (2008). Stopping criteria for differential evolution in
+    constrained single-objective optimization. In *Advances in Differential Evolution*,
+    Studies in Computational Intelligence 143, 111-138.
+    <https://doi.org/10.1007/978-3-540-68830-3_4>
