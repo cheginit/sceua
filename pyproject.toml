@@ -359,6 +359,7 @@ trim = true
 [tool.git-cliff.git]
 conventional_commits = true
 filter_unconventional = true
+commit_preprocessors = [ { pattern = " *\\[skip ci\\]", replace = "" } ]
 commit_parsers = [
   { message = "^feat", group = "Added" },
   { message = "^fix", group = "Fixed" },
@@ -366,12 +367,14 @@ commit_parsers = [
   { message = "^refactor", group = "Changed" },
   { message = "^revert", group = "Fixed" },
   { message = "^style", group = "Changed" },
+  { message = "^[a-z-]+(\\(.*\\))?!:", group = "Changed" },
   { message = "^docs", skip = true },
   { message = "^test", skip = true },
   { message = "^chore", skip = true },
   { message = "^ci", skip = true },
   { message = "^build", skip = true },
   { message = "^Merge", skip = true },
+  { message = ".*", skip = true },
 ]
 protect_breaking_commits = true
 # Only final versions count, so a final's notes start at the previous final, past any rc.
