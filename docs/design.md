@@ -9,7 +9,8 @@ design change and update it in the same change that makes or reverses a decision
 - Search here before deciding. If a decision (`D-`) or lesson (`L-`) covers the case,
     follow it, or argue against it with evidence it does not already account for.
 - A new decision gets a `D-` entry with its date. A mistake worth not repeating gets an
-    `L-` entry that names the check catching it.
+    `L-` entry that names the test or CI job catching it, since a comment or a manual
+    step fires on nothing.
 - To reverse a decision, set the old entry's status to `superseded by D-NN` and keep its
     text. The record of what was tried is the point of this page.
 - An answered question (`Q-`) becomes a `D-` entry, and the question's status becomes
