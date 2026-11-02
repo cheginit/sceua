@@ -194,7 +194,7 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
 
 ### D-13: Releases publish from a `v` tag through trusted publishing
 
-- **Status:** accepted.
+- **Status:** accepted; D-16 adds the site's Changelog page.
 - **Date:** 2026-10-23.
 - **Decision:** `pixi r release vX.Y.Z [notes-file]` tags a commit already on
     `origin/main` and pushes the tag, which runs `.github/workflows/release.yml`.
@@ -293,6 +293,24 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     other large increases: a 1-D sphere takes 968 evaluations against 276 (within 1e-6
     on 20 of 20 seeds against 2), and 20-D Rastrigin 10,380 against 1,098 (median f 7.0
     against 126). Callers passing `tolerance` get a `TypeError`.
+
+### D-16: The site renders the release history as its Changelog page
+
+- **Status:** accepted.
+- **Date:** 2026-11-02.
+- **Decision:** `pixi r docs` runs git-cliff with D-13's configuration over the whole
+    history and writes the git-ignored `docs/changelog.md`: every release newest first,
+    each headed by its tag message, plus an Unreleased section for changes on `main`
+    since the last tag. `docs.yml` checks out every commit and tag.
+- **Why:** The site had no history, and readers of the docs should not have to find the
+    GitHub releases page. One configuration writes both, so they list the same changes.
+- **Rejected:** A tracked `CHANGELOG.md`, for D-13's reason. Copying the published
+    release notes from the GitHub API at build time, which puts a network call and a
+    rate limit in every docs build.
+- **Limits:** git-cliff runs offline, so entries link their commits where the release
+    notes link pull requests. A shallow clone renders a partial page without an error.
+    v0.1.0 predates Conventional Commits, so a template fallback for a first release
+    with no listed changes writes its entry, "Initial release."
 
 ## Lessons
 

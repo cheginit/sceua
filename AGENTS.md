@@ -145,8 +145,9 @@ before and after on fixed problems and seeds, with the prediction written down f
     `<type>/<short-description>` (`fix/nan-best-point`).
 - PRs fill in `.github/pull_request_template.md`, and name the issue they finish with
     `Closes #N`.
-- The GitHub releases page is the changelog. git-cliff writes each release's notes from
-    the commit messages (D-13), so there is no `CHANGELOG.md` to edit.
+- The GitHub releases page and the site's Changelog page are the changelog. git-cliff
+    writes both from the commit messages and tag messages (D-13, D-16), so there is no
+    `CHANGELOG.md` to edit. `pixi r docs` writes `docs/changelog.md`, which git ignores.
 - `pixi r release v<version> [notes-file]` tags and pushes that tag, which publishes to
     PyPI (D-13). Run it only when a maintainer asks.
 
