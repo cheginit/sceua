@@ -302,7 +302,9 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     history and writes the git-ignored `docs/changelog.md`: every release newest first,
     each headed by its tag message, plus an Unreleased section for changes on `main`
     since the last tag. `docs.yml` checks out every commit and tag, and `release.yml`
-    runs `docs.yml` on `main` once it creates a release.
+    runs `docs.yml` on `main` once it creates a release. Commits of the types the notes
+    leave out go to a hidden `Unlisted` group, since git-cliff drops a release with no
+    commits: a release of only `build` or `docs` changes keeps its entry and summary.
 - **Why:** The site had no history, and readers of the docs should not have to find the
     GitHub releases page. One configuration writes both, so they list the same changes.
 - **Rejected:** A tracked `CHANGELOG.md`, for D-13's reason. Copying the published
@@ -310,8 +312,9 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
     rate limit in every docs build.
 - **Limits:** git-cliff runs offline, so entries link their commits where the release
     notes link pull requests. A shallow clone renders a partial page without an error.
-    v0.1.0 predates Conventional Commits, so a template fallback for a first release
-    with no listed changes writes its entry, "Initial release."
+    Pre-release tags get no entry, so their changes stay under Unreleased until the
+    final release. v0.1.0 predates Conventional Commits, so a template fallback for a
+    first release with no listed changes writes its entry, "Initial release."
 
 ## Lessons
 
