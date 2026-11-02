@@ -15,6 +15,7 @@ jobs:
     name: Create release notes
     runs-on: ubuntu-latest
     permissions:
+      actions: write  # dispatch docs.yml
       contents: write  # create the GitHub release
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -46,6 +47,11 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         PRERELEASE: ${{ steps.kind.outputs.prerelease }}
+    # docs.yml deploys on pushes to main only; without this run the Changelog page lists this
+    # release as Unreleased until the next push.
+    - run: gh workflow run docs.yml --repo "$GITHUB_REPOSITORY" --ref main
+      env:
+        GH_TOKEN: ${{ github.token }}
 
   build:
     name: Build distribution
