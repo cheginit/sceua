@@ -40,6 +40,8 @@ the `docs/design.md` entries the change touches.
     round covers them.
 - Open with the count, "N findings (I important, P pre-existing)", and say "No findings"
     when there are none.
+- Close with what the review did not check: files skipped, tests not run, paths not
+    executed.
 - On a re-review, give a fixed or still-open verdict on each earlier finding first,
     review only the new diff, and repeat no finding already answered.
 
