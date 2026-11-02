@@ -69,6 +69,7 @@ test = [
   "pytest-sugar",
 ]
 docs = [
+  "git-cliff",
   "mkdocstrings-python",
   "nbconvert",
   "zensical",
@@ -136,8 +137,10 @@ nb-pair = "jupytext --set-formats 'ipynb,py:percent' docs/examples/*.ipynb"
 
 [tool.pixi.feature.docs.tasks]
 notebooks = "python scripts/convert_notebooks.py"
-docs = { cmd = "zensical build --clean --strict", depends-on = [ "notebooks" ] }
-docs-serve = { cmd = "zensical serve", depends-on = [ "notebooks" ] }
+# Offline, so entries link commits where the release notes link pull requests.
+changelog-page = "git cliff -c pyproject.toml --offline -o docs/changelog.md"
+docs = { cmd = "zensical build --clean --strict", depends-on = [ "notebooks", "changelog-page" ] }
+docs-serve = { cmd = "zensical serve", depends-on = [ "notebooks", "changelog-page" ] }
 
 [tool.pixi.feature.lint.tasks]
 lint = "pre-commit run --all-files && python scripts/lint_untracked.py"
@@ -346,6 +349,9 @@ body = """{%- macro remote_url() -%}
 {% endif -%}
 {% if message and message | trim != version %}
 {{ message | trim }}
+{% endif %}
+{% if not previous.version and not commits %}
+Initial release.
 {% endif %}
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
