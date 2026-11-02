@@ -301,7 +301,8 @@ Derivatives, constraints beyond bounds, and multiple objectives are out of scope
 - **Decision:** `pixi r docs` runs git-cliff with D-13's configuration over the whole
     history and writes the git-ignored `docs/changelog.md`: every release newest first,
     each headed by its tag message, plus an Unreleased section for changes on `main`
-    since the last tag. `docs.yml` checks out every commit and tag.
+    since the last tag. `docs.yml` checks out every commit and tag, and `release.yml`
+    runs `docs.yml` on `main` once it creates a release.
 - **Why:** The site had no history, and readers of the docs should not have to find the
     GitHub releases page. One configuration writes both, so they list the same changes.
 - **Rejected:** A tracked `CHANGELOG.md`, for D-13's reason. Copying the published
